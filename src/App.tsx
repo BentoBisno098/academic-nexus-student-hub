@@ -12,6 +12,11 @@ import Help from "./pages/Help";
 import PasswordRecovery from "./pages/PasswordRecovery";
 import NewUserGuide from "./pages/NewUserGuide";
 import NotFound from "./pages/NotFound";
+import Subjects from "./pages/Subjects";
+import Grades from "./pages/Grades";
+import Schedule from "./pages/Schedule";
+import Materials from "./pages/Materials";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -29,12 +34,11 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/applications" element={<Applications />} />
           <Route path="/help" element={<Help />} />
-          {/* Placeholder routes for future development */}
-          <Route path="/profile" element={<Dashboard />} />
-          <Route path="/schedule" element={<Dashboard />} />
-          <Route path="/grades" element={<Dashboard />} />
-          <Route path="/materials" element={<Dashboard />} />
-          <Route path="/subjects" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/grades" element={<Grades />} />
+          <Route path="/materials" element={<Materials />} />
+          <Route path="/subjects" element={<Subjects />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
