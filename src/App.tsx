@@ -17,6 +17,9 @@ import Grades from "./pages/Grades";
 import Schedule from "./pages/Schedule";
 import Materials from "./pages/Materials";
 import Profile from "./pages/Profile";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminAlunos from "./pages/AdminAlunos";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +42,9 @@ const App = () => (
           <Route path="/grades" element={<Grades />} />
           <Route path="/materials" element={<Materials />} />
           <Route path="/subjects" element={<Subjects />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-alunos" element={<AdminAlunos />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

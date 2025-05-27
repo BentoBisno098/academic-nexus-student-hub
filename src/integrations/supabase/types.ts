@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          name: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
       aluno: {
         Row: {
           codigo: string
@@ -167,6 +191,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_horarios_disciplina"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "horarios_disciplina_id_fkey"
             columns: ["disciplina_id"]
             isOneToOne: false
@@ -250,6 +281,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_notas_aluno"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_notas_disciplina"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notas_aluno_id_fkey"
             columns: ["aluno_id"]
             isOneToOne: false
@@ -270,7 +315,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
