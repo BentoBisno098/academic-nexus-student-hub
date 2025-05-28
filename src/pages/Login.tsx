@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, GraduationCap, UserCog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [studentNumber, setStudentNumber] = useState('');
@@ -17,125 +18,124 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validação do número de aluno (10 dígitos)
-    if (studentNumber.length !== 10 || !/^\d+$/.test(studentNumber)) {
-      toast({
-        title: "Erro de Validação",
-        description: "O número de aluno deve conter exatamente 10 dígitos.",
-        variant: "destructive"
+    try {
+      const { data, error } = await supabase.rpc('aluno_login', {
+        p_codigo: studentNumber,
+        p_senha: password
       });
-      setIsLoading(false);
-      return;
-    }
 
-    // Simular autenticação
-    setTimeout(() => {
-      if (studentNumber === '1234567890' && password === 'senha123') {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('studentNumber', studentNumber);
+      if (error) throw error;
+
+      const result = data[0];
+      if (result.success) {
+        localStorage.setItem('studentSessionToken', result.session_token);
+        localStorage.setItem('studentData', JSON.stringify(result.aluno));
         toast({
-          title: "Login Realizado",
-          description: "Bem-vindo à plataforma acadêmica!"
+          title: "Login realizado",
+          description: result.message
         });
-        navigate('/dashboard');
+        navigate('/student-dashboard');
       } else {
         toast({
           title: "Erro de Autenticação",
-          description: "Número de aluno ou palavra-chave incorretos.",
+          description: result.message,
           variant: "destructive"
         });
       }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao fazer login",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            Portal Acadêmico
-          </CardTitle>
-          <p className="text-gray-600 mt-2">
-            Acesse sua conta de estudante
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="studentNumber">Número de Aluno</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="studentNumber"
-                  type="text"
-                  placeholder="Digite seus 10 dígitos"
-                  value={studentNumber}
-                  onChange={(e) => setStudentNumber(e.target.value)}
-                  className="pl-10"
-                  maxLength={10}
-                  required
-                />
+      <div className="w-full max-w-md space-y-6">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Portal do Aluno
+            </CardTitle>
+            <p className="text-gray-600 mt-2">
+              Acesse sua conta de estudante
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleStudentLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="studentNumber">Código do Aluno</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="studentNumber"
+                    type="text"
+                    placeholder="Digite seu código"
+                    value={studentNumber}
+                    onChange={(e) => setStudentNumber(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Palavra-chave</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Digite sua palavra-chave"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Digite sua senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Entrando...' : 'Entrar como Aluno'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-          <div className="mt-6 space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/password-recovery')}
-            >
-              Recuperar Palavra-chave
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full"
-              onClick={() => navigate('/new-user-guide')}
-            >
-              Orientações para Novos Utilizadores
-            </Button>
-          </div>
+        <div className="flex space-x-4">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => navigate('/admin-panel-login')}
+          >
+            <UserCog className="h-4 w-4 mr-2" />
+            Painel Admin
+          </Button>
+        </div>
 
-          <Alert className="mt-4">
-            <AlertDescription>
-              <strong>Demo:</strong> Use o número 1234567890 e palavra-chave "senha123" para testar.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+        <Alert>
+          <GraduationCap className="h-4 w-4" />
+          <AlertDescription>
+            Alunos: usem seu código e senha cadastrados.<br/>
+            Administradores: acessem o painel administrativo.
+          </AlertDescription>
+        </Alert>
+      </div>
     </div>
   );
 };

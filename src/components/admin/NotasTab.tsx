@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,24 +13,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 interface Nota {
   id: string;
-  aluno_id: string;
-  disciplina_id: string;
   prova1: number;
   prova2: number;
   trabalho: number;
   media_final: number;
-  aluno_nome?: string;
-  disciplina_nome?: string;
+  aluno_id: string;
+  disciplina_id: string;
+  aluno?: { nome: string; codigo: string };
+  disciplina?: { nome: string; codigo: string };
 }
 
 interface Aluno {
   id: string;
   nome: string;
+  codigo: string;
 }
 
 interface Disciplina {
   id: string;
   nome: string;
+  codigo: string;
 }
 
 const NotasTab = () => {
@@ -54,27 +57,37 @@ const NotasTab = () => {
 
   const loadData = async () => {
     try {
-      const [notasResponse, alunosResponse, disciplinasResponse] = await Promise.all([
-        supabase.from('notas').select('*'),
-        supabase.from('alunos').select('id, nome').order('nome'),
-        supabase.from('disciplinas').select('id, nome').order('nome')
-      ]);
+      // Carregar notas com joins
+      const { data: notasData, error: notasError } = await supabase
+        .from('notas')
+        .select(`
+          *,
+          aluno:alunos(nome, codigo),
+          disciplina:disciplinas(nome, codigo)
+        `)
+        .order('created_at', { ascending: false });
 
-      if (notasResponse.error) throw notasResponse.error;
-      if (alunosResponse.error) throw alunosResponse.error;
-      if (disciplinasResponse.error) throw disciplinasResponse.error;
+      if (notasError) throw notasError;
 
-      setAlunos(alunosResponse.data || []);
-      setDisciplinas(disciplinasResponse.data || []);
+      // Carregar alunos
+      const { data: alunosData, error: alunosError } = await supabase
+        .from('alunos')
+        .select('id, nome, codigo')
+        .order('nome');
 
-      // Enriquecer notas com nomes de alunos e disciplinas
-      const notasEnriquecidas = (notasResponse.data || []).map(nota => ({
-        ...nota,
-        aluno_nome: alunosResponse.data?.find(a => a.id === nota.aluno_id)?.nome || 'Desconhecido',
-        disciplina_nome: disciplinasResponse.data?.find(d => d.id === nota.disciplina_id)?.nome || 'Desconhecida'
-      }));
+      if (alunosError) throw alunosError;
 
-      setNotas(notasEnriquecidas);
+      // Carregar disciplinas
+      const { data: disciplinasData, error: disciplinasError } = await supabase
+        .from('disciplinas')
+        .select('id, nome, codigo')
+        .order('nome');
+
+      if (disciplinasError) throw disciplinasError;
+
+      setNotas(notasData || []);
+      setAlunos(alunosData || []);
+      setDisciplinas(disciplinasData || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -87,17 +100,28 @@ const NotasTab = () => {
     }
   };
 
+  const calculateMedia = (prova1: number, prova2: number, trabalho: number) => {
+    const total = (prova1 || 0) + (prova2 || 0) + (trabalho || 0);
+    return total / 3;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      const prova1 = parseFloat(formData.prova1) || 0;
+      const prova2 = parseFloat(formData.prova2) || 0;
+      const trabalho = parseFloat(formData.trabalho) || 0;
+      const media_final = calculateMedia(prova1, prova2, trabalho);
+
       const notaData = {
         aluno_id: formData.aluno_id,
         disciplina_id: formData.disciplina_id,
-        prova1: parseFloat(formData.prova1) || 0,
-        prova2: parseFloat(formData.prova2) || 0,
-        trabalho: parseFloat(formData.trabalho) || 0
+        prova1,
+        prova2,
+        trabalho,
+        media_final
       };
 
       if (editingId) {
@@ -164,9 +188,21 @@ const NotasTab = () => {
   };
 
   const resetForm = () => {
-    setFormData({ aluno_id: '', disciplina_id: '', prova1: '', prova2: '', trabalho: '' });
+    setFormData({
+      aluno_id: '',
+      disciplina_id: '',
+      prova1: '',
+      prova2: '',
+      trabalho: ''
+    });
     setEditingId(null);
     setShowForm(false);
+  };
+
+  const getStatusColor = (media: number) => {
+    if (media >= 16) return 'bg-green-500';
+    if (media >= 10) return 'bg-yellow-500';
+    return 'bg-red-500';
   };
 
   if (isLoading) {
@@ -192,72 +228,83 @@ const NotasTab = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="aluno">Aluno</Label>
-                <select
-                  id="aluno"
-                  value={formData.aluno_id}
-                  onChange={(e) => setFormData({...formData, aluno_id: e.target.value})}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                  required
-                >
-                  <option value="">Selecione um aluno</option>
-                  {alunos.map(aluno => (
-                    <option key={aluno.id} value={aluno.id}>{aluno.nome}</option>
-                  ))}
-                </select>
+                <Label>Aluno</Label>
+                <Select value={formData.aluno_id} onValueChange={(value) => setFormData({...formData, aluno_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um aluno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alunos.map(aluno => (
+                      <SelectItem key={aluno.id} value={aluno.id}>
+                        {aluno.nome} ({aluno.codigo})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label htmlFor="disciplina">Disciplina</Label>
-                <select
-                  id="disciplina"
-                  value={formData.disciplina_id}
-                  onChange={(e) => setFormData({...formData, disciplina_id: e.target.value})}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                  required
-                >
-                  <option value="">Selecione uma disciplina</option>
-                  {disciplinas.map(disciplina => (
-                    <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>
-                  ))}
-                </select>
+                <Label>Disciplina</Label>
+                <Select value={formData.disciplina_id} onValueChange={(value) => setFormData({...formData, disciplina_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {disciplinas.map(disciplina => (
+                      <SelectItem key={disciplina.id} value={disciplina.id}>
+                        {disciplina.nome} ({disciplina.codigo})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label htmlFor="prova1">Prova 1</Label>
+                <Label htmlFor="prova1">Prova 1 (0-20)</Label>
                 <Input
                   id="prova1"
                   type="number"
                   step="0.1"
                   min="0"
-                  max="10"
+                  max="20"
                   value={formData.prova1}
                   onChange={(e) => setFormData({...formData, prova1: e.target.value})}
                 />
               </div>
               <div>
-                <Label htmlFor="prova2">Prova 2</Label>
+                <Label htmlFor="prova2">Prova 2 (0-20)</Label>
                 <Input
                   id="prova2"
                   type="number"
                   step="0.1"
                   min="0"
-                  max="10"
+                  max="20"
                   value={formData.prova2}
                   onChange={(e) => setFormData({...formData, prova2: e.target.value})}
                 />
               </div>
               <div>
-                <Label htmlFor="trabalho">Trabalho</Label>
+                <Label htmlFor="trabalho">Trabalho (0-20)</Label>
                 <Input
                   id="trabalho"
                   type="number"
                   step="0.1"
                   min="0"
-                  max="10"
+                  max="20"
                   value={formData.trabalho}
                   onChange={(e) => setFormData({...formData, trabalho: e.target.value})}
                 />
               </div>
-              <div className="flex items-end space-x-2">
+              <div>
+                <Label>Média Final (calculada automaticamente)</Label>
+                <Input
+                  value={calculateMedia(
+                    parseFloat(formData.prova1) || 0,
+                    parseFloat(formData.prova2) || 0,
+                    parseFloat(formData.trabalho) || 0
+                  ).toFixed(1)}
+                  disabled
+                />
+              </div>
+              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
                 <Button type="submit" disabled={isLoading}>
                   {editingId ? 'Atualizar' : 'Adicionar'}
                 </Button>
@@ -291,14 +338,24 @@ const NotasTab = () => {
             <TableBody>
               {notas.map((nota) => (
                 <TableRow key={nota.id}>
-                  <TableCell className="font-medium">{nota.aluno_nome}</TableCell>
-                  <TableCell>{nota.disciplina_nome}</TableCell>
-                  <TableCell>{nota.prova1?.toFixed(1) || '0.0'}</TableCell>
-                  <TableCell>{nota.prova2?.toFixed(1) || '0.0'}</TableCell>
-                  <TableCell>{nota.trabalho?.toFixed(1) || '0.0'}</TableCell>
                   <TableCell>
-                    <Badge variant={nota.media_final >= 7 ? "default" : "destructive"}>
-                      {nota.media_final?.toFixed(1) || '0.0'}
+                    <div>
+                      <p className="font-medium">{nota.aluno?.nome}</p>
+                      <p className="text-sm text-gray-500">{nota.aluno?.codigo}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{nota.disciplina?.nome}</p>
+                      <p className="text-sm text-gray-500">{nota.disciplina?.codigo}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{nota.prova1 || '-'}</TableCell>
+                  <TableCell>{nota.prova2 || '-'}</TableCell>
+                  <TableCell>{nota.trabalho || '-'}</TableCell>
+                  <TableCell>
+                    <Badge className={`${getStatusColor(nota.media_final || 0)} text-white`}>
+                      {nota.media_final?.toFixed(1) || '-'}
                     </Badge>
                   </TableCell>
                   <TableCell>

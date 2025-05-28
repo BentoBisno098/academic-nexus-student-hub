@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,9 +15,10 @@ interface Aluno {
   id: string;
   nome: string;
   codigo: string;
+  senha: string;
+  idade: number;
   curso: string;
   turma: string;
-  idade: number;
 }
 
 const AlunosTab = () => {
@@ -31,9 +33,10 @@ const AlunosTab = () => {
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
+    senha: '',
+    idade: '',
     curso: '',
-    turma: '',
-    idade: ''
+    turma: ''
   });
   const { toast } = useToast();
 
@@ -72,7 +75,7 @@ const AlunosTab = () => {
     if (searchTerm) {
       filtered = filtered.filter(aluno => 
         aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        aluno.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+        aluno.codigo.includes(searchTerm)
       );
     }
 
@@ -95,9 +98,10 @@ const AlunosTab = () => {
       const alunoData = {
         nome: formData.nome,
         codigo: formData.codigo,
+        senha: formData.senha,
+        idade: parseInt(formData.idade),
         curso: formData.curso,
-        turma: formData.turma,
-        idade: parseInt(formData.idade)
+        turma: formData.turma
       };
 
       if (editingId) {
@@ -134,9 +138,10 @@ const AlunosTab = () => {
     setFormData({
       nome: aluno.nome,
       codigo: aluno.codigo,
-      curso: aluno.curso,
-      turma: aluno.turma,
-      idade: aluno.idade.toString()
+      senha: aluno.senha || '',
+      idade: aluno.idade?.toString() || '',
+      curso: aluno.curso || '',
+      turma: aluno.turma || ''
     });
     setEditingId(aluno.id);
     setShowForm(true);
@@ -164,13 +169,20 @@ const AlunosTab = () => {
   };
 
   const resetForm = () => {
-    setFormData({ nome: '', codigo: '', curso: '', turma: '', idade: '' });
+    setFormData({
+      nome: '',
+      codigo: '',
+      senha: '',
+      idade: '',
+      curso: '',
+      turma: ''
+    });
     setEditingId(null);
     setShowForm(false);
   };
 
-  const turmas = [...new Set(alunos.map(a => a.turma))].filter(Boolean);
-  const cursos = [...new Set(alunos.map(a => a.curso))].filter(Boolean);
+  const uniqueTurmas = [...new Set(alunos.map(a => a.turma).filter(Boolean))];
+  const uniqueCursos = [...new Set(alunos.map(a => a.curso).filter(Boolean))];
 
   if (isLoading) {
     return <div className="text-center py-4">Carregando alunos...</div>;
@@ -185,70 +197,6 @@ const AlunosTab = () => {
           Novo Aluno
         </Button>
       </div>
-
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="search">Buscar</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Nome ou código..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="turma-filter">Turma</Label>
-              <select
-                id="turma-filter"
-                value={filterTurma}
-                onChange={(e) => setFilterTurma(e.target.value)}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background"
-              >
-                <option value="">Todas as turmas</option>
-                {turmas.map(turma => (
-                  <option key={turma} value={turma}>{turma}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="curso-filter">Curso</Label>
-              <select
-                id="curso-filter"
-                value={filterCurso}
-                onChange={(e) => setFilterCurso(e.target.value)}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background"
-              >
-                <option value="">Todos os cursos</option>
-                {cursos.map(curso => (
-                  <option key={curso} value={curso}>{curso}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterTurma('');
-                  setFilterCurso('');
-                }}
-              >
-                Limpar Filtros
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Formulário */}
       {showForm && (
@@ -277,20 +225,12 @@ const AlunosTab = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="curso">Curso</Label>
+                <Label htmlFor="senha">Senha</Label>
                 <Input
-                  id="curso"
-                  value={formData.curso}
-                  onChange={(e) => setFormData({...formData, curso: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="turma">Turma</Label>
-                <Input
-                  id="turma"
-                  value={formData.turma}
-                  onChange={(e) => setFormData({...formData, turma: e.target.value})}
+                  id="senha"
+                  type="password"
+                  value={formData.senha}
+                  onChange={(e) => setFormData({...formData, senha: e.target.value})}
                   required
                 />
               </div>
@@ -301,10 +241,25 @@ const AlunosTab = () => {
                   type="number"
                   value={formData.idade}
                   onChange={(e) => setFormData({...formData, idade: e.target.value})}
-                  required
                 />
               </div>
-              <div className="flex items-end space-x-2">
+              <div>
+                <Label htmlFor="curso">Curso</Label>
+                <Input
+                  id="curso"
+                  value={formData.curso}
+                  onChange={(e) => setFormData({...formData, curso: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="turma">Turma</Label>
+                <Input
+                  id="turma"
+                  value={formData.turma}
+                  onChange={(e) => setFormData({...formData, turma: e.target.value})}
+                />
+              </div>
+              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
                 <Button type="submit" disabled={isLoading}>
                   {editingId ? 'Atualizar' : 'Adicionar'}
                 </Button>
@@ -317,6 +272,45 @@ const AlunosTab = () => {
         </Card>
       )}
 
+      {/* Filtros */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome ou código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={filterTurma} onValueChange={setFilterTurma}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por turma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas as turmas</SelectItem>
+                {uniqueTurmas.map(turma => (
+                  <SelectItem key={turma} value={turma}>{turma}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterCurso} onValueChange={setFilterCurso}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por curso" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os cursos</SelectItem>
+                {uniqueCursos.map(curso => (
+                  <SelectItem key={curso} value={curso}>{curso}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Lista de Alunos */}
       <Card>
         <CardHeader>
@@ -328,9 +322,9 @@ const AlunosTab = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Código</TableHead>
+                <TableHead>Idade</TableHead>
                 <TableHead>Curso</TableHead>
                 <TableHead>Turma</TableHead>
-                <TableHead>Idade</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -341,9 +335,11 @@ const AlunosTab = () => {
                   <TableCell>
                     <Badge variant="outline">{aluno.codigo}</Badge>
                   </TableCell>
-                  <TableCell>{aluno.curso}</TableCell>
-                  <TableCell>{aluno.turma}</TableCell>
-                  <TableCell>{aluno.idade}</TableCell>
+                  <TableCell>{aluno.idade || 'N/A'}</TableCell>
+                  <TableCell>{aluno.curso || 'N/A'}</TableCell>
+                  <TableCell>
+                    {aluno.turma && <Badge>{aluno.turma}</Badge>}
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button

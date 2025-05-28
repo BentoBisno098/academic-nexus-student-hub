@@ -60,6 +60,38 @@ export type Database = {
         }
         Relationships: []
       }
+      aluno_sessions: {
+        Row: {
+          aluno_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          session_token: string
+        }
+        Insert: {
+          aluno_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          session_token: string
+        }
+        Update: {
+          aluno_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          session_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_sessions_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos: {
         Row: {
           codigo: string
@@ -67,6 +99,7 @@ export type Database = {
           id: string
           idade: number | null
           nome: string
+          senha: string | null
           turma: string | null
         }
         Insert: {
@@ -75,6 +108,7 @@ export type Database = {
           id?: string
           idade?: number | null
           nome: string
+          senha?: string | null
           turma?: string | null
         }
         Update: {
@@ -83,6 +117,7 @@ export type Database = {
           id?: string
           idade?: number | null
           nome?: string
+          senha?: string | null
           turma?: string | null
         }
         Relationships: []
@@ -315,6 +350,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aluno_login: {
+        Args: { p_codigo: string; p_senha: string }
+        Returns: {
+          success: boolean
+          session_token: string
+          aluno: Json
+          message: string
+        }[]
+      }
+      get_aluno_horarios: {
+        Args: { p_session_token: string }
+        Returns: {
+          id: string
+          dia: string
+          inicio: string
+          fim: string
+          turma: string
+          disciplina_nome: string
+          disciplina_codigo: string
+        }[]
+      }
+      get_aluno_notas: {
+        Args: { p_session_token: string }
+        Returns: {
+          id: string
+          prova1: number
+          prova2: number
+          trabalho: number
+          media_final: number
+          disciplina_nome: string
+          disciplina_codigo: string
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean

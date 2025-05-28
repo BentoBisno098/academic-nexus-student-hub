@@ -1,0 +1,272 @@
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LogOut, Clock, FileText, User } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+interface StudentData {
+  id: string;
+  nome: string;
+  codigo: string;
+  curso: string;
+  turma: string;
+  idade: number;
+}
+
+interface Nota {
+  id: string;
+  prova1: number;
+  prova2: number;
+  trabalho: number;
+  media_final: number;
+  disciplina_nome: string;
+  disciplina_codigo: string;
+}
+
+interface Horario {
+  id: string;
+  dia: string;
+  inicio: string;
+  fim: string;
+  turma: string;
+  disciplina_nome: string;
+  disciplina_codigo: string;
+}
+
+const StudentDashboard = () => {
+  const [studentData, setStudentData] = useState<StudentData | null>(null);
+  const [notas, setNotas] = useState<Nota[]>([]);
+  const [horarios, setHorarios] = useState<Horario[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const sessionToken = localStorage.getItem('studentSessionToken');
+      const studentDataStr = localStorage.getItem('studentData');
+      
+      if (!sessionToken || !studentDataStr) {
+        navigate('/');
+        return;
+      }
+
+      setStudentData(JSON.parse(studentDataStr));
+      loadStudentData(sessionToken);
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const loadStudentData = async (sessionToken: string) => {
+    try {
+      // Carregar notas
+      const { data: notasData, error: notasError } = await supabase.rpc('get_aluno_notas', {
+        p_session_token: sessionToken
+      });
+
+      if (notasError) throw notasError;
+      setNotas(notasData || []);
+
+      // Carregar horários
+      const { data: horariosData, error: horariosError } = await supabase.rpc('get_aluno_horarios', {
+        p_session_token: sessionToken
+      });
+
+      if (horariosError) throw horariosError;
+      setHorarios(horariosData || []);
+
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do aluno",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('studentSessionToken');
+    localStorage.removeItem('studentData');
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso"
+    });
+    navigate('/');
+  };
+
+  const getStatusColor = (media: number) => {
+    if (media >= 16) return 'bg-green-500';
+    if (media >= 10) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const diasOrdem = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const horariosOrdenados = horarios.sort((a, b) => {
+    const diaA = diasOrdem.indexOf(a.dia);
+    const diaB = diasOrdem.indexOf(b.dia);
+    if (diaA !== diaB) return diaA - diaB;
+    return a.inicio.localeCompare(b.inicio);
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-blue-600">Portal do Aluno</h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Bem-vindo, {studentData?.nome}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sair</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Informações do Aluno */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <User className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{studentData?.nome}</h2>
+                <p className="text-gray-600">Código: {studentData?.codigo}</p>
+                <p className="text-gray-600">{studentData?.curso} - {studentData?.turma}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Notas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Minhas Notas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notas.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">Nenhuma nota encontrada</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Disciplina</TableHead>
+                      <TableHead>P1</TableHead>
+                      <TableHead>P2</TableHead>
+                      <TableHead>Trabalho</TableHead>
+                      <TableHead>Média</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {notas.map((nota) => (
+                      <TableRow key={nota.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{nota.disciplina_nome}</p>
+                            <p className="text-sm text-gray-500">{nota.disciplina_codigo}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{nota.prova1 || '-'}</TableCell>
+                        <TableCell>{nota.prova2 || '-'}</TableCell>
+                        <TableCell>{nota.trabalho || '-'}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={`${getStatusColor(nota.media_final || 0)} text-white`}
+                          >
+                            {nota.media_final?.toFixed(1) || '-'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Horários */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Meus Horários - {studentData?.turma}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {horariosOrdenados.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">Nenhum horário encontrado</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Dia</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead>Disciplina</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {horariosOrdenados.map((horario) => (
+                      <TableRow key={horario.id}>
+                        <TableCell>
+                          <Badge variant="outline">{horario.dia}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {horario.inicio} - {horario.fim}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{horario.disciplina_nome}</p>
+                            <p className="text-sm text-gray-500">{horario.disciplina_codigo}</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentDashboard;
