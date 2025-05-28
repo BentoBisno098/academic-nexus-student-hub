@@ -14,46 +14,83 @@ import HorariosTab from '@/components/admin/HorariosTab';
 const AdminPanel = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('alunos');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/admin-panel-login');
-        return;
+      try {
+        console.log('Verificando autenticação...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao verificar sessão:', error);
+          throw error;
+        }
+
+        if (!session) {
+          console.log('Nenhuma sessão encontrada, redirecionando...');
+          navigate('/admin-panel-login');
+          return;
+        }
+
+        console.log('Sessão encontrada:', session.user.email);
+        if (mounted) {
+          setUser(session.user);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Erro na verificação de auth:', error);
+        if (mounted) {
+          toast({
+            title: "Erro",
+            description: "Erro ao verificar autenticação",
+            variant: "destructive"
+          });
+          navigate('/admin-panel-login');
+        }
       }
-      setUser(session.user);
-      setIsLoading(false);
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      if (!mounted) return;
+
       if (event === 'SIGNED_OUT') {
         navigate('/admin-panel-login');
+      } else if (session) {
+        setUser(session.user);
+        setIsLoading(false);
       }
-      setUser(session?.user || null);
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao fazer logout",
-        variant: "destructive"
-      });
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso"
       });
       navigate('/admin-panel-login');
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer logout",
+        variant: "destructive"
+      });
     }
   };
 
@@ -62,7 +99,17 @@ const AdminPanel = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <p className="mt-4 text-gray-600">Carregando painel administrativo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecionando para login...</p>
         </div>
       </div>
     );
@@ -101,7 +148,7 @@ const AdminPanel = () => {
           <p className="text-gray-600 mt-2">Gerencie alunos, disciplinas, notas e horários</p>
         </div>
 
-        <Tabs defaultValue="alunos" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="disciplinas">Disciplinas</TabsTrigger>
