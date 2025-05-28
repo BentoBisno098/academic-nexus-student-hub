@@ -57,17 +57,30 @@ const NotasTab = () => {
 
   const loadData = async () => {
     try {
-      // Carregar notas com joins
+      // Carregar notas com joins usando as relações corretas
       const { data: notasData, error: notasError } = await supabase
         .from('notas')
         .select(`
           *,
-          aluno:alunos(nome, codigo),
-          disciplina:disciplinas(nome, codigo)
+          alunos!notas_aluno_id_fkey(nome, codigo),
+          disciplinas!notas_disciplina_id_fkey(nome, codigo)
         `)
         .order('created_at', { ascending: false });
 
       if (notasError) throw notasError;
+
+      // Transformar dados para o formato esperado
+      const transformedNotas = notasData?.map(n => ({
+        ...n,
+        aluno: n.alunos ? {
+          nome: n.alunos.nome,
+          codigo: n.alunos.codigo
+        } : undefined,
+        disciplina: n.disciplinas ? {
+          nome: n.disciplinas.nome,
+          codigo: n.disciplinas.codigo
+        } : undefined
+      })) || [];
 
       // Carregar alunos
       const { data: alunosData, error: alunosError } = await supabase
@@ -85,7 +98,7 @@ const NotasTab = () => {
 
       if (disciplinasError) throw disciplinasError;
 
-      setNotas(notasData || []);
+      setNotas(transformedNotas);
       setAlunos(alunosData || []);
       setDisciplinas(disciplinasData || []);
     } catch (error) {

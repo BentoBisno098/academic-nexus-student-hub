@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,17 +55,26 @@ const HorariosTab = () => {
 
   const loadData = async () => {
     try {
-      // Carregar horários com joins
+      // Carregar horários com joins usando a relação correta
       const { data: horariosData, error: horariosError } = await supabase
         .from('horarios')
         .select(`
           *,
-          disciplina:disciplinas(nome, codigo)
+          disciplinas!horarios_disciplina_id_fkey(nome, codigo)
         `)
         .order('dia')
         .order('inicio');
 
       if (horariosError) throw horariosError;
+
+      // Transformar dados para o formato esperado
+      const transformedHorarios = horariosData?.map(h => ({
+        ...h,
+        disciplina: h.disciplinas ? {
+          nome: h.disciplinas.nome,
+          codigo: h.disciplinas.codigo
+        } : undefined
+      })) || [];
 
       // Carregar disciplinas
       const { data: disciplinasData, error: disciplinasError } = await supabase
@@ -76,7 +84,7 @@ const HorariosTab = () => {
 
       if (disciplinasError) throw disciplinasError;
 
-      setHorarios(horariosData || []);
+      setHorarios(transformedHorarios);
       setDisciplinas(disciplinasData || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
