@@ -39,7 +39,7 @@ const HorariosTabComponent = () => {
         .from('horarios')
         .select(`
           *,
-          disciplinas:disciplina_id (nome, codigo)
+          disciplinas!horarios_disciplina_id_fkey (nome, codigo)
         `)
         .order('dia')
         .order('inicio');
@@ -63,7 +63,7 @@ const HorariosTabComponent = () => {
 
     if (filterTurma) {
       filtered = filtered.filter(horario => 
-        horario.turma.toLowerCase().includes(filterTurma.toLowerCase())
+        horario.turma?.toLowerCase().includes(filterTurma.toLowerCase())
       );
     }
 
@@ -88,10 +88,10 @@ const HorariosTabComponent = () => {
   };
 
   const groupedHorarios = filteredHorarios.reduce((acc, horario) => {
-    if (!acc[horario.turma]) {
-      acc[horario.turma] = [];
+    if (!acc[horario.turma || 'Sem turma']) {
+      acc[horario.turma || 'Sem turma'] = [];
     }
-    acc[horario.turma].push(horario);
+    acc[horario.turma || 'Sem turma'].push(horario);
     return acc;
   }, {} as Record<string, Horario[]>);
 
@@ -106,7 +106,7 @@ const HorariosTabComponent = () => {
     });
   });
 
-  const turmas = [...new Set(horarios.map(h => h.turma))].filter(Boolean).sort();
+  const turmas = [...new Set(horarios.map(h => h.turma).filter(Boolean))].sort();
 
   return (
     <div>
@@ -194,11 +194,11 @@ const HorariosTabComponent = () => {
                               {formatTime(horario.inicio)} - {formatTime(horario.fim)}
                             </td>
                             <td className="p-2 font-medium">
-                              {horario.disciplinas?.nome}
+                              {horario.disciplinas?.nome || 'N/A'}
                             </td>
                             <td className="p-2">
                               <Badge variant="outline">
-                                {horario.disciplinas?.codigo}
+                                {horario.disciplinas?.codigo || 'N/A'}
                               </Badge>
                             </td>
                           </tr>

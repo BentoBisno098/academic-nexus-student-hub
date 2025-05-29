@@ -66,8 +66,8 @@ const NotasTabComponent = () => {
           .from('notas')
           .select(`
             *,
-            alunos:aluno_id (nome, codigo),
-            disciplinas:disciplina_id (nome, codigo)
+            alunos!notas_aluno_id_fkey (nome, codigo),
+            disciplinas!notas_disciplina_id_fkey (nome, codigo)
           `),
         supabase
           .from('alunos')
@@ -346,22 +346,22 @@ const NotasTabComponent = () => {
                     <tr key={nota.id} className="border-b hover:bg-gray-50">
                       <td className="p-2">
                         <div>
-                          <div className="font-medium">{nota.alunos?.nome}</div>
-                          <Badge variant="outline" className="text-xs">{nota.alunos?.codigo}</Badge>
+                          <div className="font-medium">{nota.alunos?.nome || 'N/A'}</div>
+                          <Badge variant="outline" className="text-xs">{nota.alunos?.codigo || 'N/A'}</Badge>
                         </div>
                       </td>
                       <td className="p-2">
                         <div>
-                          <div className="font-medium">{nota.disciplinas?.nome}</div>
-                          <Badge variant="outline" className="text-xs">{nota.disciplinas?.codigo}</Badge>
+                          <div className="font-medium">{nota.disciplinas?.nome || 'N/A'}</div>
+                          <Badge variant="outline" className="text-xs">{nota.disciplinas?.codigo || 'N/A'}</Badge>
                         </div>
                       </td>
-                      <td className="p-2">{nota.prova1.toFixed(1)}</td>
-                      <td className="p-2">{nota.prova2.toFixed(1)}</td>
-                      <td className="p-2">{nota.trabalho.toFixed(1)}</td>
+                      <td className="p-2">{nota.prova1?.toFixed(1) || '0.0'}</td>
+                      <td className="p-2">{nota.prova2?.toFixed(1) || '0.0'}</td>
+                      <td className="p-2">{nota.trabalho?.toFixed(1) || '0.0'}</td>
                       <td className="p-2">
                         <Badge variant={nota.media_final >= 7 ? "default" : "destructive"}>
-                          {nota.media_final.toFixed(1)}
+                          {nota.media_final?.toFixed(1) || '0.0'}
                         </Badge>
                       </td>
                       <td className="p-2">
