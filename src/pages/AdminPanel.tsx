@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ const AdminPanel = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('alunos');
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,34 +23,42 @@ const AdminPanel = () => {
 
     const checkAuth = async () => {
       try {
-        console.log('Verificando autenticação...');
+        console.log('AdminPanel: Verificando autenticação...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Erro ao verificar sessão:', error);
+          console.error('AdminPanel: Erro ao verificar sessão:', error);
           throw error;
         }
 
         if (!session) {
-          console.log('Nenhuma sessão encontrada, redirecionando...');
-          navigate('/admin-panel-login');
+          console.log('AdminPanel: Nenhuma sessão encontrada, redirecionando...');
+          if (mounted) {
+            navigate('/admin-panel-login');
+          }
           return;
         }
 
-        console.log('Sessão encontrada:', session.user.email);
+        console.log('AdminPanel: Sessão encontrada:', session.user.email);
         if (mounted) {
           setUser(session.user);
           setIsLoading(false);
+          setError(null);
         }
-      } catch (error) {
-        console.error('Erro na verificação de auth:', error);
+      } catch (error: any) {
+        console.error('AdminPanel: Erro na verificação de auth:', error);
         if (mounted) {
+          setError(error.message || 'Erro ao verificar autenticação');
+          setIsLoading(false);
           toast({
             title: "Erro",
             description: "Erro ao verificar autenticação",
             variant: "destructive"
           });
-          navigate('/admin-panel-login');
+          // Não redirecionar imediatamente para permitir que o usuário veja o erro
+          setTimeout(() => {
+            navigate('/admin-panel-login');
+          }, 2000);
         }
       }
     };
@@ -56,7 +66,7 @@ const AdminPanel = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
+      console.log('AdminPanel: Auth state changed:', event, session?.user?.email);
       if (!mounted) return;
 
       if (event === 'SIGNED_OUT') {
@@ -64,6 +74,7 @@ const AdminPanel = () => {
       } else if (session) {
         setUser(session.user);
         setIsLoading(false);
+        setError(null);
       }
     });
 
@@ -75,6 +86,7 @@ const AdminPanel = () => {
 
   const handleLogout = async () => {
     try {
+      console.log('AdminPanel: Fazendo logout...');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -84,6 +96,7 @@ const AdminPanel = () => {
       });
       navigate('/admin-panel-login');
     } catch (error: any) {
+      console.error('AdminPanel: Erro no logout:', error);
       toast({
         title: "Erro",
         description: "Erro ao fazer logout",
@@ -91,6 +104,20 @@ const AdminPanel = () => {
       });
     }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-md">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Erro no Painel Administrativo</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => navigate('/admin-panel-login')}>
+            Voltar para o Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -112,6 +139,8 @@ const AdminPanel = () => {
       </div>
     );
   }
+
+  console.log('AdminPanel: Renderizando painel principal para:', user.email);
 
   return (
     <div className="min-h-screen bg-gray-50">

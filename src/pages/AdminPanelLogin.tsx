@@ -18,6 +18,7 @@ const AdminPanelLogin = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -26,20 +27,24 @@ const AdminPanelLogin = () => {
 
     const checkUser = async () => {
       try {
-        console.log('Verificando se usuário já está logado...');
+        console.log('AdminPanelLogin: Verificando se usuário já está logado...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Erro ao verificar sessão:', error);
+          console.error('AdminPanelLogin: Erro ao verificar sessão:', error);
+          setError(error.message);
         }
         
         if (session && mounted) {
-          console.log('Usuário já logado, redirecionando...');
+          console.log('AdminPanelLogin: Usuário já logado, redirecionando...');
           navigate('/admin-panel');
           return;
         }
-      } catch (error) {
-        console.error('Erro na verificação:', error);
+      } catch (error: any) {
+        console.error('AdminPanelLogin: Erro na verificação:', error);
+        if (mounted) {
+          setError(error.message || 'Erro ao verificar autenticação');
+        }
       } finally {
         if (mounted) {
           setIsCheckingAuth(false);
@@ -57,10 +62,11 @@ const AdminPanelLogin = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       if (isSignUp) {
-        console.log('Tentando criar conta...');
+        console.log('AdminPanelLogin: Tentando criar conta...');
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -78,8 +84,10 @@ const AdminPanelLogin = () => {
           description: "Conta criada com sucesso. Você pode fazer login agora."
         });
         setIsSignUp(false);
+        setName('');
+        setPassword('');
       } else {
-        console.log('Tentando fazer login...');
+        console.log('AdminPanelLogin: Tentando fazer login...');
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -87,7 +95,7 @@ const AdminPanelLogin = () => {
 
         if (error) throw error;
 
-        console.log('Login bem-sucedido, redirecionando...');
+        console.log('AdminPanelLogin: Login bem-sucedido, redirecionando...');
         toast({
           title: "Login realizado!",
           description: "Bem-vindo ao painel administrativo."
@@ -95,10 +103,12 @@ const AdminPanelLogin = () => {
         navigate('/admin-panel');
       }
     } catch (error: any) {
-      console.error('Erro de autenticação:', error);
+      console.error('AdminPanelLogin: Erro de autenticação:', error);
+      const errorMessage = error.message || "Erro na autenticação";
+      setError(errorMessage);
       toast({
         title: "Erro",
-        description: error.message || "Erro na autenticação",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -141,6 +151,12 @@ const AdminPanelLogin = () => {
             </p>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert className="mb-4" variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleAuth} className="space-y-4">
               {isSignUp && (
                 <div className="space-y-2">
@@ -208,7 +224,12 @@ const AdminPanelLogin = () => {
               <Button 
                 variant="ghost" 
                 className="w-full"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                  setName('');
+                  setPassword('');
+                }}
               >
                 {isSignUp ? 'Já tem conta? Fazer login' : 'Criar nova conta'}
               </Button>
