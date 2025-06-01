@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ interface Horario {
   fim: string;
   turma: string;
   disciplina_id: string;
-  disciplina?: { nome: string; codigo: string };
+  disciplinas?: { nome: string; codigo: string };
 }
 
 interface Disciplina {
@@ -67,15 +68,6 @@ const HorariosTab = () => {
 
       if (horariosError) throw horariosError;
 
-      // Transformar dados para o formato esperado
-      const transformedHorarios = horariosData?.map(h => ({
-        ...h,
-        disciplina: h.disciplinas ? {
-          nome: h.disciplinas.nome,
-          codigo: h.disciplinas.codigo
-        } : undefined
-      })) || [];
-
       // Carregar disciplinas
       const { data: disciplinasData, error: disciplinasError } = await supabase
         .from('disciplinas')
@@ -84,7 +76,7 @@ const HorariosTab = () => {
 
       if (disciplinasError) throw disciplinasError;
 
-      setHorarios(transformedHorarios);
+      setHorarios(horariosData || []);
       setDisciplinas(disciplinasData || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -350,8 +342,8 @@ const HorariosTab = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{horario.disciplina?.nome}</p>
-                      <p className="text-sm text-gray-500">{horario.disciplina?.codigo}</p>
+                      <p className="font-medium">{horario.disciplinas?.nome || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{horario.disciplinas?.codigo || 'N/A'}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -367,8 +359,6 @@ const HorariosTab = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(horario.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
