@@ -4,18 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 interface Horario {
   id: string;
@@ -24,10 +17,7 @@ interface Horario {
   inicio: string;
   fim: string;
   sala?: string;
-  disciplina?: {
-    nome: string;
-    codigo: string;
-  };
+  disciplina?: { nome: string; codigo: string };
 }
 
 interface Disciplina {
@@ -35,15 +25,6 @@ interface Disciplina {
   nome: string;
   codigo: string;
 }
-
-const diasSemana = [
-  'Segunda',
-  'Terça',
-  'Quarta',
-  'Quinta',
-  'Sexta',
-  'Sábado'
-];
 
 const HorariosTab = () => {
   const [horarios, setHorarios] = useState<Horario[]>([]);
@@ -60,58 +41,60 @@ const HorariosTab = () => {
   });
   const { toast } = useToast();
 
+  const diasSemana = [
+    'Segunda-feira',
+    'Terça-feira', 
+    'Quarta-feira',
+    'Quinta-feira',
+    'Sexta-feira',
+    'Sábado'
+  ];
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    await Promise.all([loadHorarios(), loadDisciplinas()]);
-  };
-
-  const loadHorarios = async () => {
     try {
-      const { data, error } = await supabase
+      // Carregar horários com joins
+      const { data: horariosData, error: horariosError } = await supabase
         .from('horarios')
         .select(`
           *,
-          disciplinas (
-            nome,
-            codigo
-          )
+          disciplinas!horarios_disciplina_id_fkey(nome, codigo)
         `)
-        .order('dia')
-        .order('inicio');
+        .order('dia', { ascending: true });
 
-      if (error) throw error;
-      setHorarios(data || []);
+      if (horariosError) throw horariosError;
+
+      // Transformar dados para o formato esperado
+      const transformedHorarios = horariosData?.map(h => ({
+        ...h,
+        disciplina: h.disciplinas ? {
+          nome: h.disciplinas.nome,
+          codigo: h.disciplinas.codigo
+        } : undefined
+      })) || [];
+
+      // Carregar disciplinas
+      const { data: disciplinasData, error: disciplinasError } = await supabase
+        .from('disciplinas')
+        .select('id, nome, codigo')
+        .order('nome');
+
+      if (disciplinasError) throw disciplinasError;
+
+      setHorarios(transformedHorarios);
+      setDisciplinas(disciplinasData || []);
     } catch (error) {
-      console.error('Erro ao carregar horários:', error);
+      console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar lista de horários",
+        description: "Erro ao carregar dados",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadDisciplinas = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('disciplinas')
-        .select('*')
-        .order('nome');
-
-      if (error) throw error;
-      setDisciplinas(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar disciplinas:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar lista de disciplinas",
-        variant: "destructive"
-      });
     }
   };
 
@@ -128,14 +111,14 @@ const HorariosTab = () => {
     if (formData.fim <= formData.inicio) {
       toast({
         title: "Erro",
-        description: "Hora de término deve ser maior que hora de início",
+        description: "A hora de término deve ser maior que a hora de início",
         variant: "destructive"
       });
       return false;
     }
 
     // Verificar duplicidade
-    const duplicate = horarios.find(h => 
+    const duplicado = horarios.find(h => 
       h.id !== editingId &&
       h.disciplina_id === formData.disciplina_id &&
       h.dia === formData.dia &&
@@ -144,10 +127,10 @@ const HorariosTab = () => {
        (formData.inicio <= h.inicio && formData.fim >= h.fim))
     );
 
-    if (duplicate) {
+    if (duplicado) {
       toast({
         title: "Erro",
-        description: "Já existe um horário cadastrado para esta disciplina neste dia e horário",
+        description: "Já existe um horário para esta disciplina neste dia e horário",
         variant: "destructive"
       });
       return false;
@@ -158,13 +141,12 @@ const HorariosTab = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      const dataToSave = {
+      const horarioData = {
         disciplina_id: formData.disciplina_id,
         dia: formData.dia,
         inicio: formData.inicio,
@@ -175,7 +157,7 @@ const HorariosTab = () => {
       if (editingId) {
         const { error } = await supabase
           .from('horarios')
-          .update(dataToSave)
+          .update(horarioData)
           .eq('id', editingId);
         
         if (error) throw error;
@@ -183,14 +165,14 @@ const HorariosTab = () => {
       } else {
         const { error } = await supabase
           .from('horarios')
-          .insert([dataToSave]);
+          .insert([horarioData]);
         
         if (error) throw error;
         toast({ title: "Sucesso", description: "Horário cadastrado com sucesso!" });
       }
 
       resetForm();
-      loadHorarios();
+      loadData();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -205,9 +187,9 @@ const HorariosTab = () => {
   const handleEdit = (horario: Horario) => {
     setFormData({
       disciplina_id: horario.disciplina_id,
-      dia: horario.dia || '',
-      inicio: horario.inicio || '',
-      fim: horario.fim || '',
+      dia: horario.dia,
+      inicio: horario.inicio,
+      fim: horario.fim,
       sala: horario.sala || ''
     });
     setEditingId(horario.id);
@@ -225,7 +207,7 @@ const HorariosTab = () => {
 
       if (error) throw error;
       toast({ title: "Sucesso", description: "Horário excluído com sucesso!" });
-      loadHorarios();
+      loadData();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -236,12 +218,12 @@ const HorariosTab = () => {
   };
 
   const resetForm = () => {
-    setFormData({ 
-      disciplina_id: '', 
-      dia: '', 
-      inicio: '', 
-      fim: '', 
-      sala: '' 
+    setFormData({
+      disciplina_id: '',
+      dia: '',
+      inicio: '',
+      fim: '',
+      sala: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -270,16 +252,13 @@ const HorariosTab = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="disciplina">Disciplina *</Label>
-                <Select
-                  value={formData.disciplina_id}
-                  onValueChange={(value) => setFormData({...formData, disciplina_id: value})}
-                >
+                <Label>Disciplina *</Label>
+                <Select value={formData.disciplina_id} onValueChange={(value) => setFormData({...formData, disciplina_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma disciplina" />
                   </SelectTrigger>
                   <SelectContent>
-                    {disciplinas.map((disciplina) => (
+                    {disciplinas.map(disciplina => (
                       <SelectItem key={disciplina.id} value={disciplina.id}>
                         {disciplina.nome} ({disciplina.codigo})
                       </SelectItem>
@@ -287,18 +266,15 @@ const HorariosTab = () => {
                   </SelectContent>
                 </Select>
               </div>
-
+              
               <div>
-                <Label htmlFor="dia">Dia da Semana *</Label>
-                <Select
-                  value={formData.dia}
-                  onValueChange={(value) => setFormData({...formData, dia: value})}
-                >
+                <Label>Dia da Semana *</Label>
+                <Select value={formData.dia} onValueChange={(value) => setFormData({...formData, dia: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o dia" />
                   </SelectTrigger>
                   <SelectContent>
-                    {diasSemana.map((dia) => (
+                    {diasSemana.map(dia => (
                       <SelectItem key={dia} value={dia}>
                         {dia}
                       </SelectItem>
@@ -333,13 +309,14 @@ const HorariosTab = () => {
                 <Label htmlFor="sala">Sala</Label>
                 <Input
                   id="sala"
+                  type="text"
                   value={formData.sala}
                   onChange={(e) => setFormData({...formData, sala: e.target.value})}
                   placeholder="Ex: Sala 101"
                 />
               </div>
 
-              <div className="flex items-end space-x-2">
+              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
                 <Button type="submit" disabled={isLoading}>
                   {editingId ? 'Atualizar' : 'Salvar'}
                 </Button>
@@ -372,15 +349,13 @@ const HorariosTab = () => {
             <TableBody>
               {horarios.map((horario) => (
                 <TableRow key={horario.id}>
-                  <TableCell className="font-medium">
-                    {horario.disciplinas?.nome || 'N/A'}
-                    <div className="text-sm text-gray-500">
-                      {horario.disciplinas?.codigo}
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{horario.disciplina?.nome}</p>
+                      <p className="text-sm text-gray-500">{horario.disciplina?.codigo}</p>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{horario.dia}</Badge>
-                  </TableCell>
+                  <TableCell>{horario.dia}</TableCell>
                   <TableCell>{horario.inicio}</TableCell>
                   <TableCell>{horario.fim}</TableCell>
                   <TableCell>{horario.sala || '-'}</TableCell>

@@ -345,6 +345,51 @@ export type Database = {
           },
         ]
       }
+      notaslançadas: {
+        Row: {
+          aluno_id: string | null
+          ano_letivo: number | null
+          disciplina_id: string | null
+          id: string
+          prova_final: number | null
+          prova_professor: number | null
+          trimestre: number | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          ano_letivo?: number | null
+          disciplina_id?: string | null
+          id?: string
+          prova_final?: number | null
+          prova_professor?: number | null
+          trimestre?: number | null
+        }
+        Update: {
+          aluno_id?: string | null
+          ano_letivo?: number | null
+          disciplina_id?: string | null
+          id?: string
+          prova_final?: number | null
+          prova_professor?: number | null
+          trimestre?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notaslançadas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notaslançadas_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
