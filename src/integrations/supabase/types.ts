@@ -289,30 +289,42 @@ export type Database = {
       notas: {
         Row: {
           aluno_id: string | null
+          ano_letivo: number | null
           disciplina_id: string | null
           id: string
           media_final: number | null
+          prova_final: number | null
+          prova_professor: number | null
           prova1: number | null
           prova2: number | null
           trabalho: number | null
+          trimestre: number | null
         }
         Insert: {
           aluno_id?: string | null
+          ano_letivo?: number | null
           disciplina_id?: string | null
           id?: string
           media_final?: number | null
+          prova_final?: number | null
+          prova_professor?: number | null
           prova1?: number | null
           prova2?: number | null
           trabalho?: number | null
+          trimestre?: number | null
         }
         Update: {
           aluno_id?: string | null
+          ano_letivo?: number | null
           disciplina_id?: string | null
           id?: string
           media_final?: number | null
+          prova_final?: number | null
+          prova_professor?: number | null
           prova1?: number | null
           prova2?: number | null
           trabalho?: number | null
+          trimestre?: number | null
         }
         Relationships: [
           {
