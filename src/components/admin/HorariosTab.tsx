@@ -237,7 +237,7 @@ const HorariosTab = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-bold">Gerenciar Horários</h3>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Novo Horário
         </Button>
@@ -247,7 +247,7 @@ const HorariosTab = () => {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? 'Editar Horário' : 'Novo Horário'}</CardTitle>
+            <CardTitle>{editingId ? 'Editar Horário' : 'Adicionar Novo Horário'}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -317,8 +317,8 @@ const HorariosTab = () => {
               </div>
 
               <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
-                <Button type="submit" disabled={isLoading}>
-                  {editingId ? 'Atualizar' : 'Salvar'}
+                <Button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+                  {editingId ? 'Atualizar Horário' : 'Salvar Horário'}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar

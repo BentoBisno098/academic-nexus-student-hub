@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,7 +55,6 @@ const AdminPanel = () => {
             description: "Erro ao verificar autenticação",
             variant: "destructive"
           });
-          // Não redirecionar imediatamente para permitir que o usuário veja o erro
           setTimeout(() => {
             navigate('/admin-panel-login');
           }, 2000);
