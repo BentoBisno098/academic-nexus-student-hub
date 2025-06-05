@@ -1,9 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Nota, Aluno, Disciplina, NotaFormData } from './types';
+import { Nota, Aluno, Disciplina } from './types';
 
 export const loadNotasData = async () => {
-  // Carregar notas com joins usando as relações corretas
+  // Carregar notas trimestrais apenas
   const { data: notasData, error: notasError } = await supabase
     .from('notas')
     .select(`
@@ -11,6 +11,7 @@ export const loadNotasData = async () => {
       alunos!notas_aluno_id_fkey(nome, codigo),
       disciplinas!notas_disciplina_id_fkey(nome, codigo)
     `)
+    .not('trimestre', 'is', null)
     .order('created_at', { ascending: false });
 
   if (notasError) throw notasError;
@@ -51,50 +52,6 @@ export const loadNotasData = async () => {
   };
 };
 
-export const saveNota = async (
-  formData: NotaFormData, 
-  tipoNota: 'tradicional' | 'trimestral', 
-  editingId?: string | null
-) => {
-  const notaData = {
-    aluno_id: formData.aluno_id,
-    disciplina_id: formData.disciplina_id,
-    ano_letivo: parseInt(formData.ano_letivo) || new Date().getFullYear(),
-    ...(tipoNota === 'tradicional' ? {
-      prova1: parseFloat(formData.prova1) || 0,
-      prova2: parseFloat(formData.prova2) || 0,
-      trabalho: parseFloat(formData.trabalho) || 0,
-      trimestre: null,
-      prova_professor: null,
-      prova_final: null
-    } : {
-      trimestre: parseInt(formData.trimestre) || 1,
-      prova_professor: parseFloat(formData.prova_professor) || 0,
-      prova_final: parseFloat(formData.prova_final) || 0,
-      prova1: null,
-      prova2: null,
-      trabalho: null
-    })
-  };
-
-  if (editingId) {
-    const { error } = await supabase
-      .from('notas')
-      .update(notaData)
-      .eq('id', editingId);
-    
-    if (error) throw error;
-    return 'atualizada';
-  } else {
-    const { error } = await supabase
-      .from('notas')
-      .insert([notaData]);
-    
-    if (error) throw error;
-    return 'adicionada';
-  }
-};
-
 export const deleteNota = async (id: string) => {
   const { error } = await supabase
     .from('notas')
@@ -111,6 +68,5 @@ export const getStatusColor = (media: number) => {
 };
 
 export const getTipoNotaBadge = (nota: Nota) => {
-  const isTradicional = nota.prova1 !== null || nota.prova2 !== null || nota.trabalho !== null;
-  return { isTradicional, tipo: isTradicional ? 'Tradicional' : 'Trimestral' };
+  return { isTradicional: false, tipo: 'Trimestral' };
 };

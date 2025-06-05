@@ -4,21 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Nota } from './types';
-import { getStatusColor, getTipoNotaBadge } from './notaUtils';
+import { getStatusColor } from './notaUtils';
 
 interface NotasTableProps {
   notas: Nota[];
-  onEdit: (nota: Nota) => void;
   onDelete: (id: string) => void;
 }
 
-const NotasTable: React.FC<NotasTableProps> = ({ notas, onEdit, onDelete }) => {
+const NotasTable: React.FC<NotasTableProps> = ({ notas, onDelete }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lista de Notas ({notas.length})</CardTitle>
+        <CardTitle>Lista de Notas Trimestrais ({notas.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -26,16 +25,20 @@ const NotasTable: React.FC<NotasTableProps> = ({ notas, onEdit, onDelete }) => {
             <TableRow>
               <TableHead>Aluno</TableHead>
               <TableHead>Disciplina</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Trimestre</TableHead>
               <TableHead>Ano</TableHead>
-              <TableHead>Detalhes</TableHead>
-              <TableHead>Média Final</TableHead>
+              <TableHead>Prova Professor</TableHead>
+              <TableHead>Prova Final</TableHead>
+              <TableHead>Média</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {notas.map((nota) => {
-              const { isTradicional, tipo } = getTipoNotaBadge(nota);
+              const media = nota.prova_professor && nota.prova_final 
+                ? (nota.prova_professor + nota.prova_final) / 2
+                : null;
+              
               return (
                 <TableRow key={nota.id}>
                   <TableCell>
@@ -51,48 +54,28 @@ const NotasTable: React.FC<NotasTableProps> = ({ notas, onEdit, onDelete }) => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={isTradicional ? "text-blue-600" : "text-purple-600"}>
-                      {tipo}
+                    <Badge variant="outline" className="text-purple-600">
+                      {nota.trimestre}º Trimestre
                     </Badge>
                   </TableCell>
                   <TableCell>{nota.ano_letivo || '-'}</TableCell>
+                  <TableCell>{nota.prova_professor || '-'}</TableCell>
+                  <TableCell>{nota.prova_final || '-'}</TableCell>
                   <TableCell>
-                    {isTradicional ? (
-                      <div className="text-sm">
-                        <p>P1: {nota.prova1 || '-'}</p>
-                        <p>P2: {nota.prova2 || '-'}</p>
-                        <p>Trab: {nota.trabalho || '-'}</p>
-                      </div>
-                    ) : (
-                      <div className="text-sm">
-                        <p>Trim: {nota.trimestre}º</p>
-                        <p>Prof: {nota.prova_professor || '-'}</p>
-                        <p>Final: {nota.prova_final || '-'}</p>
-                      </div>
-                    )}
+                    {media !== null ? (
+                      <Badge className={`${getStatusColor(media)} text-white`}>
+                        {media.toFixed(1)}
+                      </Badge>
+                    ) : '-'}
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getStatusColor(nota.media_final || 0)} text-white`}>
-                      {nota.media_final?.toFixed(1) || '-'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onEdit(nota)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => onDelete(nota.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => onDelete(nota.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

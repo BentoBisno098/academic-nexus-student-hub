@@ -5,18 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Aluno, Disciplina } from './types';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Aluno {
+  id: string;
+  nome: string;
+  codigo: string;
+  turma: string;
+}
+
+interface Disciplina {
+  id: string;
+  nome: string;
+  codigo: string;
+}
 
 interface NotaTrimestre {
-  id?: string;
-  aluno_id: string;
-  disciplina_id: string;
   trimestre: number;
-  prova_professor: number;
-  prova_final: number;
-  ano_letivo: number;
+  prova_professor: number | null;
+  prova_final: number | null;
+}
+
+interface NotasData {
+  [key: string]: { // aluno_id-disciplina_id
+    [trimestre: number]: NotaTrimestre;
+  };
 }
 
 const NotasTrimestre = () => {
@@ -24,109 +39,131 @@ const NotasTrimestre = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [selectedAluno, setSelectedAluno] = useState('');
   const [selectedDisciplina, setSelectedDisciplina] = useState('');
-  const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear());
-  const [notas, setNotas] = useState<{[key: number]: {prova_professor: string, prova_final: string}}>({
-    1: { prova_professor: '', prova_final: '' },
-    2: { prova_professor: '', prova_final: '' },
-    3: { prova_professor: '', prova_final: '' }
-  });
-  const [notasExistentes, setNotasExistentes] = useState<NotaTrimestre[]>([]);
+  const [notasData, setNotasData] = useState<NotasData>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear().toString());
   const { toast } = useToast();
 
   useEffect(() => {
-    loadData();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
     if (selectedAluno && selectedDisciplina) {
-      loadNotasExistentes();
+      loadNotasForAlunoAndDisciplina();
     }
   }, [selectedAluno, selectedDisciplina, anoLetivo]);
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
     try {
-      const [alunosResponse, disciplinasResponse] = await Promise.all([
-        supabase.from('alunos').select('id, nome, codigo').order('nome'),
-        supabase.from('disciplinas').select('id, nome, codigo').order('nome')
-      ]);
+      // Carregar alunos
+      const { data: alunosData, error: alunosError } = await supabase
+        .from('alunos')
+        .select('id, nome, codigo, turma')
+        .order('nome');
 
-      if (alunosResponse.error) throw alunosResponse.error;
-      if (disciplinasResponse.error) throw disciplinasResponse.error;
+      if (alunosError) throw alunosError;
 
-      setAlunos(alunosResponse.data || []);
-      setDisciplinas(disciplinasResponse.data || []);
-    } catch (error) {
+      // Carregar disciplinas
+      const { data: disciplinasData, error: disciplinasError } = await supabase
+        .from('disciplinas')
+        .select('id, nome, codigo')
+        .order('nome');
+
+      if (disciplinasError) throw disciplinasError;
+
+      setAlunos(alunosData || []);
+      setDisciplinas(disciplinasData || []);
+    } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados",
+        description: "Erro ao carregar dados iniciais",
         variant: "destructive"
       });
     }
   };
 
-  const loadNotasExistentes = async () => {
+  const loadNotasForAlunoAndDisciplina = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: notasExistentes, error } = await supabase
         .from('notas')
         .select('*')
         .eq('aluno_id', selectedAluno)
         .eq('disciplina_id', selectedDisciplina)
-        .eq('ano_letivo', anoLetivo)
+        .eq('ano_letivo', parseInt(anoLetivo))
         .not('trimestre', 'is', null);
 
       if (error) throw error;
 
-      setNotasExistentes(data || []);
+      const key = `${selectedAluno}-${selectedDisciplina}`;
+      const notasObj: { [trimestre: number]: NotaTrimestre } = {};
 
-      // Preencher os campos com notas existentes
-      const notasTemp = {
-        1: { prova_professor: '', prova_final: '' },
-        2: { prova_professor: '', prova_final: '' },
-        3: { prova_professor: '', prova_final: '' }
-      };
+      // Inicializar com valores vazios para os 3 trimestres
+      [1, 2, 3].forEach(trimestre => {
+        notasObj[trimestre] = {
+          trimestre,
+          prova_professor: null,
+          prova_final: null
+        };
+      });
 
-      data?.forEach(nota => {
-        if (nota.trimestre && nota.trimestre >= 1 && nota.trimestre <= 3) {
-          notasTemp[nota.trimestre] = {
-            prova_professor: nota.prova_professor?.toString() || '',
-            prova_final: nota.prova_final?.toString() || ''
+      // Preencher com dados existentes
+      notasExistentes?.forEach(nota => {
+        if (nota.trimestre) {
+          notasObj[nota.trimestre] = {
+            trimestre: nota.trimestre,
+            prova_professor: nota.prova_professor,
+            prova_final: nota.prova_final
           };
         }
       });
 
-      setNotas(notasTemp);
-    } catch (error) {
-      console.error('Erro ao carregar notas existentes:', error);
+      setNotasData(prev => ({
+        ...prev,
+        [key]: notasObj
+      }));
+    } catch (error: any) {
+      console.error('Erro ao carregar notas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar notas existentes",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleNotaChange = (trimestre: number, campo: 'prova_professor' | 'prova_final', valor: string) => {
-    // Validar se o valor está entre 0 e 20
-    const numeroValor = parseFloat(valor);
-    if (valor !== '' && (isNaN(numeroValor) || numeroValor < 0 || numeroValor > 20)) {
+  const updateNota = (trimestre: number, field: 'prova_professor' | 'prova_final', value: string) => {
+    const key = `${selectedAluno}-${selectedDisciplina}`;
+    const numValue = value === '' ? null : parseFloat(value);
+    
+    // Validar se está entre 0 e 20
+    if (numValue !== null && (numValue < 0 || numValue > 20)) {
       toast({
-        title: "Erro",
+        title: "Valor inválido",
         description: "As notas devem estar entre 0 e 20",
         variant: "destructive"
       });
       return;
     }
 
-    setNotas(prev => ({
+    setNotasData(prev => ({
       ...prev,
-      [trimestre]: {
-        ...prev[trimestre],
-        [campo]: valor
+      [key]: {
+        ...prev[key],
+        [trimestre]: {
+          ...prev[key]?.[trimestre],
+          trimestre,
+          [field]: numValue
+        }
       }
     }));
   };
 
-  const handleSalvarNotas = async () => {
+  const salvarNotas = async () => {
     if (!selectedAluno || !selectedDisciplina) {
       toast({
-        title: "Erro",
+        title: "Seleção incompleta",
         description: "Selecione um aluno e uma disciplina",
         variant: "destructive"
       });
@@ -134,30 +171,40 @@ const NotasTrimestre = () => {
     }
 
     setIsLoading(true);
-
     try {
-      // Deletar notas existentes primeiro
+      const key = `${selectedAluno}-${selectedDisciplina}`;
+      const notasDoAluno = notasData[key];
+
+      if (!notasDoAluno) {
+        toast({
+          title: "Nenhuma nota",
+          description: "Não há notas para salvar",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Primeiro, deletar notas existentes para este aluno/disciplina/ano
       await supabase
         .from('notas')
         .delete()
         .eq('aluno_id', selectedAluno)
         .eq('disciplina_id', selectedDisciplina)
-        .eq('ano_letivo', anoLetivo)
+        .eq('ano_letivo', parseInt(anoLetivo))
         .not('trimestre', 'is', null);
 
       // Inserir novas notas
       const notasParaInserir = [];
-      
-      for (let trimestre = 1; trimestre <= 3; trimestre++) {
-        const nota = notas[trimestre];
-        if (nota.prova_professor !== '' || nota.prova_final !== '') {
+      for (const trimestre of [1, 2, 3]) {
+        const notaTrimestre = notasDoAluno[trimestre];
+        if (notaTrimestre && (notaTrimestre.prova_professor !== null || notaTrimestre.prova_final !== null)) {
           notasParaInserir.push({
             aluno_id: selectedAluno,
             disciplina_id: selectedDisciplina,
+            ano_letivo: parseInt(anoLetivo),
             trimestre: trimestre,
-            prova_professor: parseFloat(nota.prova_professor) || 0,
-            prova_final: parseFloat(nota.prova_final) || 0,
-            ano_letivo: anoLetivo,
+            prova_professor: notaTrimestre.prova_professor,
+            prova_final: notaTrimestre.prova_final,
             prova1: null,
             prova2: null,
             trabalho: null
@@ -178,12 +225,11 @@ const NotasTrimestre = () => {
         description: "Notas salvas com sucesso!"
       });
 
-      loadNotasExistentes();
     } catch (error: any) {
       console.error('Erro ao salvar notas:', error);
       toast({
         title: "Erro",
-        description: error.message,
+        description: "Erro ao salvar notas",
         variant: "destructive"
       });
     } finally {
@@ -191,28 +237,36 @@ const NotasTrimestre = () => {
     }
   };
 
-  const resetForm = () => {
-    setSelectedAluno('');
-    setSelectedDisciplina('');
-    setNotas({
-      1: { prova_professor: '', prova_final: '' },
-      2: { prova_professor: '', prova_final: '' },
-      3: { prova_professor: '', prova_final: '' }
-    });
+  const getColorForTrimestre = (trimestre: number) => {
+    switch (trimestre) {
+      case 1: return 'border-blue-500';
+      case 2: return 'border-green-500';
+      case 3: return 'border-red-500';
+      default: return 'border-gray-500';
+    }
   };
+
+  const getIconForTrimestre = (trimestre: number) => {
+    switch (trimestre) {
+      case 1: return '🟦';
+      case 2: return '🟩';
+      case 3: return '🟥';
+      default: return '⬜';
+    }
+  };
+
+  const selectedAlunoData = alunos.find(a => a.id === selectedAluno);
+  const selectedDisciplinaData = disciplinas.find(d => d.id === selectedDisciplina);
+  const key = `${selectedAluno}-${selectedDisciplina}`;
+  const notasDoAluno = notasData[key];
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold">Sistema de Notas por Trimestre</h3>
-      </div>
-
-      {/* Seleção de Aluno e Disciplina */}
       <Card>
         <CardHeader>
-          <CardTitle>Selecionar Aluno e Disciplina</CardTitle>
+          <CardTitle>Sistema de Notas por Trimestre</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Aluno</Label>
@@ -223,7 +277,7 @@ const NotasTrimestre = () => {
                 <SelectContent>
                   {alunos.map(aluno => (
                     <SelectItem key={aluno.id} value={aluno.id}>
-                      {aluno.nome} ({aluno.codigo})
+                      {aluno.nome} ({aluno.codigo}) - {aluno.turma}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -250,144 +304,87 @@ const NotasTrimestre = () => {
               <Label>Ano Letivo</Label>
               <Input
                 type="number"
-                value={anoLetivo}
-                onChange={(e) => setAnoLetivo(parseInt(e.target.value))}
                 min="2020"
                 max="2030"
+                value={anoLetivo}
+                onChange={(e) => setAnoLetivo(e.target.value)}
               />
             </div>
           </div>
+
+          {selectedAlunoData && selectedDisciplinaData && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold mb-2">
+                Aluno: {selectedAlunoData.nome} ({selectedAlunoData.codigo}) | 
+                Disciplina: {selectedDisciplinaData.nome} ({selectedDisciplinaData.codigo})
+              </h3>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Formulário de Notas por Trimestre */}
       {selectedAluno && selectedDisciplina && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 1º Trimestre */}
-          <Card className="border-blue-500">
-            <CardHeader className="bg-blue-50">
-              <CardTitle className="flex items-center text-blue-700">
-                🟦 1º Trimestre
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="prova_professor_1">Prova do Professor 1</Label>
-                <Input
-                  id="prova_professor_1"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[1].prova_professor}
-                  onChange={(e) => handleNotaChange(1, 'prova_professor', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="prova_final_1">Prova Final 1</Label>
-                <Input
-                  id="prova_final_1"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[1].prova_final}
-                  onChange={(e) => handleNotaChange(1, 'prova_final', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 2º Trimestre */}
-          <Card className="border-green-500">
-            <CardHeader className="bg-green-50">
-              <CardTitle className="flex items-center text-green-700">
-                🟩 2º Trimestre
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="prova_professor_2">Prova do Professor 2</Label>
-                <Input
-                  id="prova_professor_2"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[2].prova_professor}
-                  onChange={(e) => handleNotaChange(2, 'prova_professor', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="prova_final_2">Prova Final 2</Label>
-                <Input
-                  id="prova_final_2"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[2].prova_final}
-                  onChange={(e) => handleNotaChange(2, 'prova_final', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 3º Trimestre */}
-          <Card className="border-red-500">
-            <CardHeader className="bg-red-50">
-              <CardTitle className="flex items-center text-red-700">
-                🟥 3º Trimestre
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="prova_professor_3">Prova do Professor 3</Label>
-                <Input
-                  id="prova_professor_3"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[3].prova_professor}
-                  onChange={(e) => handleNotaChange(3, 'prova_professor', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="prova_final_3">Prova Final 3</Label>
-                <Input
-                  id="prova_final_3"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  value={notas[3].prova_final}
-                  onChange={(e) => handleNotaChange(3, 'prova_final', e.target.value)}
-                  placeholder="0.0 - 20.0"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {[1, 2, 3].map(trimestre => (
+            <Card key={trimestre} className={`border-2 ${getColorForTrimestre(trimestre)}`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>{getIconForTrimestre(trimestre)}</span>
+                  {trimestre}º Trimestre
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor={`prof_${trimestre}`}>Prova do Professor (0-20)</Label>
+                  <Input
+                    id={`prof_${trimestre}`}
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="20"
+                    value={notasDoAluno?.[trimestre]?.prova_professor || ''}
+                    onChange={(e) => updateNota(trimestre, 'prova_professor', e.target.value)}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`final_${trimestre}`}>Prova Final (0-20)</Label>
+                  <Input
+                    id={`final_${trimestre}`}
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="20"
+                    value={notasDoAluno?.[trimestre]?.prova_final || ''}
+                    onChange={(e) => updateNota(trimestre, 'prova_final', e.target.value)}
+                    placeholder="0.0"
+                  />
+                </div>
+                {notasDoAluno?.[trimestre]?.prova_professor !== null && 
+                 notasDoAluno?.[trimestre]?.prova_final !== null && (
+                  <div className="pt-2">
+                    <Label>Média do Trimestre:</Label>
+                    <Badge variant="outline" className="ml-2">
+                      {(((notasDoAluno[trimestre].prova_professor || 0) + 
+                         (notasDoAluno[trimestre].prova_final || 0)) / 2).toFixed(1)}
+                    </Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Botões de Ação */}
       {selectedAluno && selectedDisciplina && (
-        <div className="flex space-x-4">
+        <div className="flex justify-center">
           <Button 
-            onClick={handleSalvarNotas} 
+            onClick={salvarNotas} 
             disabled={isLoading}
-            className="bg-green-600 hover:bg-green-700"
+            size="lg"
+            className="px-8"
           >
             {isLoading ? 'Salvando...' : 'Salvar Notas'}
-          </Button>
-          <Button variant="outline" onClick={resetForm}>
-            Limpar Formulário
           </Button>
         </div>
       )}
