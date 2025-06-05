@@ -28,11 +28,28 @@ const AdminPanelLogin = () => {
     const checkUser = async () => {
       try {
         console.log('AdminPanelLogin: Verificando se usuário já está logado...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // Adicionar timeout para evitar requests infinitos
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout na verificação de sessão')), 10000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error('AdminPanelLogin: Erro ao verificar sessão:', error);
-          setError(error.message);
+          // Se há erro de conectividade, não bloquear a página
+          if (error.message?.includes('Failed to fetch')) {
+            console.log('AdminPanelLogin: Erro de conectividade detectado, permitindo acesso ao formulário');
+            setError('Erro de conectividade. Tente fazer login mesmo assim.');
+          } else {
+            setError(error.message);
+          }
         }
         
         if (session && mounted) {
@@ -43,7 +60,11 @@ const AdminPanelLogin = () => {
       } catch (error: any) {
         console.error('AdminPanelLogin: Erro na verificação:', error);
         if (mounted) {
-          setError(error.message || 'Erro ao verificar autenticação');
+          if (error.message?.includes('Timeout') || error.message?.includes('Failed to fetch')) {
+            setError('Problema de conectividade. Você ainda pode tentar fazer login.');
+          } else {
+            setError(error.message || 'Erro ao verificar autenticação');
+          }
         }
       } finally {
         if (mounted) {
@@ -67,6 +88,7 @@ const AdminPanelLogin = () => {
     try {
       if (isSignUp) {
         console.log('AdminPanelLogin: Tentando criar conta...');
+        
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -77,7 +99,13 @@ const AdminPanelLogin = () => {
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          // Tratar erros específicos
+          if (error.message?.includes('Failed to fetch')) {
+            throw new Error('Erro de conectividade. Verifique sua conexão com a internet.');
+          }
+          throw error;
+        }
 
         toast({
           title: "Cadastro realizado!",
@@ -88,12 +116,22 @@ const AdminPanelLogin = () => {
         setPassword('');
       } else {
         console.log('AdminPanelLogin: Tentando fazer login...');
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (error) throw error;
+        if (error) {
+          // Tratar erros específicos
+          if (error.message?.includes('Failed to fetch')) {
+            throw new Error('Erro de conectividade. Verifique sua conexão com a internet.');
+          }
+          if (error.message?.includes('Invalid login credentials')) {
+            throw new Error('Email ou senha incorretos.');
+          }
+          throw error;
+        }
 
         console.log('AdminPanelLogin: Login bem-sucedido, redirecionando...');
         toast({
