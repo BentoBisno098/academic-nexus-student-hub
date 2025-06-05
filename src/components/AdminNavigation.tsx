@@ -7,7 +7,6 @@ import {
   Users, 
   BookOpen, 
   FileText, 
-  Calendar,
   LogOut,
   BarChart3
 } from 'lucide-react';
@@ -24,7 +23,6 @@ const AdminNavigation = () => {
     { label: 'Alunos', path: '/admin-alunos', icon: Users },
     { label: 'Disciplinas', path: '/admin-disciplinas', icon: BookOpen },
     { label: 'Notas', path: '/admin-notas', icon: FileText },
-    { label: 'Horários', path: '/admin-horarios', icon: Calendar },
     { label: 'Relatórios', path: '/admin-relatorios', icon: BarChart3 },
   ];
 
