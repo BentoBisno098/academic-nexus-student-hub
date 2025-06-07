@@ -9,7 +9,6 @@ import {
   GraduationCap, 
   HelpCircle,
   User,
-  Calendar,
   Download
 } from 'lucide-react';
 
@@ -20,7 +19,6 @@ const Navigation = () => {
   const navigationItems = [
     { label: 'Início', path: '/dashboard', icon: Home },
     { label: 'Perfil', path: '/profile', icon: User },
-    { label: 'Horários', path: '/schedule', icon: Calendar },
     { label: 'Notas', path: '/grades', icon: FileText },
     { label: 'Materiais', path: '/materials', icon: Download },
     { label: 'Disciplinas', path: '/subjects', icon: BookOpen },

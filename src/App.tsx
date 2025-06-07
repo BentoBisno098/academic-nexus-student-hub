@@ -12,7 +12,6 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Grades from "./pages/Grades";
-import Schedule from "./pages/Schedule";
 import Subjects from "./pages/Subjects";
 import Materials from "./pages/Materials";
 import Applications from "./pages/Applications";
@@ -43,7 +42,6 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/grades" element={<Grades />} />
-          <Route path="/schedule" element={<Schedule />} />
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/materials" element={<Materials />} />
           <Route path="/applications" element={<Applications />} />
