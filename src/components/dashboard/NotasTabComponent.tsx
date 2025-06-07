@@ -12,13 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Nota {
   id: string;
-  prova1: number;
-  prova2: number;
-  trabalho: number;
-  media_final: number;
   trimestre: number;
   prova_professor: number;
   prova_final: number;
+  media_final: number;
   ano_letivo: number;
   aluno_id: string;
   disciplina_id: string;
@@ -47,13 +44,9 @@ const NotasTabComponent = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tipoNota, setTipoNota] = useState<'tradicional' | 'trimestral'>('tradicional');
   const [formData, setFormData] = useState({
     aluno_id: '',
     disciplina_id: '',
-    prova1: '',
-    prova2: '',
-    trabalho: '',
     trimestre: '',
     prova_professor: '',
     prova_final: '',
@@ -78,7 +71,8 @@ const NotasTabComponent = () => {
             *,
             alunos!notas_aluno_id_fkey (nome, codigo),
             disciplinas!notas_disciplina_id_fkey (nome, codigo)
-          `),
+          `)
+          .not('trimestre', 'is', null),
         supabase
           .from('alunos')
           .select('id, nome, codigo')
@@ -131,21 +125,12 @@ const NotasTabComponent = () => {
         aluno_id: formData.aluno_id,
         disciplina_id: formData.disciplina_id,
         ano_letivo: parseInt(formData.ano_letivo) || new Date().getFullYear(),
-        ...(tipoNota === 'tradicional' ? {
-          prova1: parseFloat(formData.prova1) || 0,
-          prova2: parseFloat(formData.prova2) || 0,
-          trabalho: parseFloat(formData.trabalho) || 0,
-          trimestre: null,
-          prova_professor: null,
-          prova_final: null
-        } : {
-          trimestre: parseInt(formData.trimestre) || 1,
-          prova_professor: parseFloat(formData.prova_professor) || 0,
-          prova_final: parseFloat(formData.prova_final) || 0,
-          prova1: null,
-          prova2: null,
-          trabalho: null
-        })
+        trimestre: parseInt(formData.trimestre) || 1,
+        prova_professor: parseFloat(formData.prova_professor) || 0,
+        prova_final: parseFloat(formData.prova_final) || 0,
+        prova1: null,
+        prova2: null,
+        trabalho: null
       };
 
       if (editingId) {
@@ -179,15 +164,9 @@ const NotasTabComponent = () => {
   };
 
   const handleEdit = (nota: Nota) => {
-    const isTradicional = nota.prova1 !== null || nota.prova2 !== null || nota.trabalho !== null;
-    setTipoNota(isTradicional ? 'tradicional' : 'trimestral');
-    
     setFormData({
       aluno_id: nota.aluno_id,
       disciplina_id: nota.disciplina_id,
-      prova1: nota.prova1?.toString() || '',
-      prova2: nota.prova2?.toString() || '',
-      trabalho: nota.trabalho?.toString() || '',
       trimestre: nota.trimestre?.toString() || '',
       prova_professor: nota.prova_professor?.toString() || '',
       prova_final: nota.prova_final?.toString() || '',
@@ -222,9 +201,6 @@ const NotasTabComponent = () => {
     setFormData({ 
       aluno_id: '', 
       disciplina_id: '', 
-      prova1: '', 
-      prova2: '', 
-      trabalho: '',
       trimestre: '',
       prova_professor: '',
       prova_final: '',
@@ -232,24 +208,14 @@ const NotasTabComponent = () => {
     });
     setEditingId(null);
     setShowForm(false);
-    setTipoNota('tradicional');
-  };
-
-  const getTipoNotaBadge = (nota: Nota) => {
-    const isTradicional = nota.prova1 !== null || nota.prova2 !== null || nota.trabalho !== null;
-    return isTradicional ? (
-      <Badge variant="outline" className="text-blue-600">Tradicional</Badge>
-    ) : (
-      <Badge variant="outline" className="text-purple-600">Trimestral</Badge>
-    );
   };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Gerenciar Notas</h3>
-          <p className="text-gray-600 mt-1">Lançar e editar notas dos alunos</p>
+          <h3 className="text-2xl font-bold text-gray-900">Gerenciar Notas Trimestrais</h3>
+          <p className="text-gray-600 mt-1">Lançar e editar notas por trimestre</p>
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -279,7 +245,7 @@ const NotasTabComponent = () => {
       {showForm && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>{editingId ? 'Editar Nota' : 'Nova Nota'}</CardTitle>
+            <CardTitle>{editingId ? 'Editar Nota' : 'Nova Nota Trimestral'}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -327,104 +293,47 @@ const NotasTabComponent = () => {
                 </div>
               </div>
 
-              <div>
-                <Label>Tipo de Nota</Label>
-                <Select value={tipoNota} onValueChange={(value: 'tradicional' | 'trimestral') => setTipoNota(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tradicional">Tradicional (P1, P2, Trabalho)</SelectItem>
-                    <SelectItem value="trimestral">Trimestral (Professor, Final)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Trimestre</Label>
+                  <Select value={formData.trimestre} onValueChange={(value) => setFormData({...formData, trimestre: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o trimestre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1º Trimestre</SelectItem>
+                      <SelectItem value="2">2º Trimestre</SelectItem>
+                      <SelectItem value="3">3º Trimestre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="prova_professor">Prova Professor</Label>
+                  <Input
+                    id="prova_professor"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="20"
+                    value={formData.prova_professor}
+                    onChange={(e) => setFormData({...formData, prova_professor: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="prova_final">Prova Final</Label>
+                  <Input
+                    id="prova_final"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="20"
+                    value={formData.prova_final}
+                    onChange={(e) => setFormData({...formData, prova_final: e.target.value})}
+                    required
+                  />
+                </div>
               </div>
-
-              {tipoNota === 'tradicional' ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="prova1">Prova 1</Label>
-                    <Input
-                      id="prova1"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.prova1}
-                      onChange={(e) => setFormData({...formData, prova1: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="prova2">Prova 2</Label>
-                    <Input
-                      id="prova2"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.prova2}
-                      onChange={(e) => setFormData({...formData, prova2: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="trabalho">Trabalho</Label>
-                    <Input
-                      id="trabalho"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.trabalho}
-                      onChange={(e) => setFormData({...formData, trabalho: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Trimestre</Label>
-                    <Select value={formData.trimestre} onValueChange={(value) => setFormData({...formData, trimestre: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o trimestre" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1º Trimestre</SelectItem>
-                        <SelectItem value="2">2º Trimestre</SelectItem>
-                        <SelectItem value="3">3º Trimestre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="prova_professor">Prova Professor</Label>
-                    <Input
-                      id="prova_professor"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.prova_professor}
-                      onChange={(e) => setFormData({...formData, prova_professor: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="prova_final">Prova Final</Label>
-                    <Input
-                      id="prova_final"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={formData.prova_final}
-                      onChange={(e) => setFormData({...formData, prova_final: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="flex items-center space-x-2">
                 <Button type="submit" disabled={isLoading}>
@@ -442,7 +351,7 @@ const NotasTabComponent = () => {
       {/* Lista de Notas */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Notas ({filteredNotas.length})</CardTitle>
+          <CardTitle>Lista de Notas Trimestrais ({filteredNotas.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -454,73 +363,62 @@ const NotasTabComponent = () => {
                   <tr className="border-b">
                     <th className="text-left p-2">Aluno</th>
                     <th className="text-left p-2">Disciplina</th>
-                    <th className="text-left p-2">Tipo</th>
+                    <th className="text-left p-2">Trimestre</th>
                     <th className="text-left p-2">Ano</th>
-                    <th className="text-left p-2">Detalhes</th>
+                    <th className="text-left p-2">Prova Professor</th>
+                    <th className="text-left p-2">Prova Final</th>
                     <th className="text-left p-2">Média Final</th>
                     <th className="text-left p-2">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredNotas.map((nota) => {
-                    const isTradicional = nota.prova1 !== null || nota.prova2 !== null || nota.trabalho !== null;
-                    return (
-                      <tr key={nota.id} className="border-b hover:bg-gray-50">
-                        <td className="p-2">
-                          <div>
-                            <div className="font-medium">{nota.alunos?.nome || 'N/A'}</div>
-                            <Badge variant="outline" className="text-xs">{nota.alunos?.codigo || 'N/A'}</Badge>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div>
-                            <div className="font-medium">{nota.disciplinas?.nome || 'N/A'}</div>
-                            <Badge variant="outline" className="text-xs">{nota.disciplinas?.codigo || 'N/A'}</Badge>
-                          </div>
-                        </td>
-                        <td className="p-2">{getTipoNotaBadge(nota)}</td>
-                        <td className="p-2">{nota.ano_letivo || '-'}</td>
-                        <td className="p-2">
-                          {isTradicional ? (
-                            <div className="text-sm">
-                              <p>P1: {nota.prova1?.toFixed(1) || '0.0'}</p>
-                              <p>P2: {nota.prova2?.toFixed(1) || '0.0'}</p>
-                              <p>Trab: {nota.trabalho?.toFixed(1) || '0.0'}</p>
-                            </div>
-                          ) : (
-                            <div className="text-sm">
-                              <p>Trim: {nota.trimestre}º</p>
-                              <p>Prof: {nota.prova_professor?.toFixed(1) || '0.0'}</p>
-                              <p>Final: {nota.prova_final?.toFixed(1) || '0.0'}</p>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2">
-                          <Badge variant={nota.media_final >= 7 ? "default" : "destructive"}>
-                            {nota.media_final?.toFixed(1) || '0.0'}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(nota)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(nota.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filteredNotas.map((nota) => (
+                    <tr key={nota.id} className="border-b hover:bg-gray-50">
+                      <td className="p-2">
+                        <div>
+                          <div className="font-medium">{nota.alunos?.nome || 'N/A'}</div>
+                          <Badge variant="outline" className="text-xs">{nota.alunos?.codigo || 'N/A'}</Badge>
+                        </div>
+                      </td>
+                      <td className="p-2">
+                        <div>
+                          <div className="font-medium">{nota.disciplinas?.nome || 'N/A'}</div>
+                          <Badge variant="outline" className="text-xs">{nota.disciplinas?.codigo || 'N/A'}</Badge>
+                        </div>
+                      </td>
+                      <td className="p-2">
+                        <Badge variant="outline" className="text-purple-600">
+                          {nota.trimestre}º Trim
+                        </Badge>
+                      </td>
+                      <td className="p-2">{nota.ano_letivo || '-'}</td>
+                      <td className="p-2">{nota.prova_professor?.toFixed(1) || '0.0'}</td>
+                      <td className="p-2">{nota.prova_final?.toFixed(1) || '0.0'}</td>
+                      <td className="p-2">
+                        <Badge variant={nota.media_final >= 10 ? "default" : "destructive"}>
+                          {nota.media_final?.toFixed(1) || '0.0'}
+                        </Badge>
+                      </td>
+                      <td className="p-2">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(nota)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(nota.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               {filteredNotas.length === 0 && (

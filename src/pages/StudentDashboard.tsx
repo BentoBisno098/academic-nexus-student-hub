@@ -20,9 +20,9 @@ interface StudentData {
 
 interface Nota {
   id: string;
-  prova1: number;
-  prova2: number;
-  trabalho: number;
+  trimestre: number;
+  prova_professor: number;
+  prova_final: number;
   media_final: number;
   disciplina_nome: string;
   disciplina_codigo: string;
@@ -54,13 +54,34 @@ const StudentDashboard = () => {
 
   const loadStudentData = async (sessionToken: string) => {
     try {
-      // Carregar notas
-      const { data: notasData, error: notasError } = await supabase.rpc('get_aluno_notas', {
-        p_session_token: sessionToken
-      });
+      // Carregar notas trimestrais
+      const { data: notasData, error: notasError } = await supabase
+        .from('notas')
+        .select(`
+          id,
+          trimestre,
+          prova_professor,
+          prova_final,
+          media_final,
+          disciplinas!notas_disciplina_id_fkey (nome, codigo)
+        `)
+        .not('trimestre', 'is', null)
+        .eq('aluno_id', JSON.parse(localStorage.getItem('studentData') || '{}').id);
 
       if (notasError) throw notasError;
-      setNotas(notasData || []);
+      
+      // Transformar dados para o formato esperado
+      const notasFormatted = notasData?.map(nota => ({
+        id: nota.id,
+        trimestre: nota.trimestre,
+        prova_professor: nota.prova_professor,
+        prova_final: nota.prova_final,
+        media_final: nota.media_final,
+        disciplina_nome: nota.disciplinas?.nome || '',
+        disciplina_codigo: nota.disciplinas?.codigo || ''
+      })) || [];
+
+      setNotas(notasFormatted);
 
     } catch (error: any) {
       toast({
@@ -144,12 +165,12 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Notas */}
+        {/* Notas Trimestrais */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="h-5 w-5 mr-2" />
-              Minhas Notas
+              Minhas Notas Trimestrais
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -160,9 +181,9 @@ const StudentDashboard = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Disciplina</TableHead>
-                    <TableHead>P1</TableHead>
-                    <TableHead>P2</TableHead>
-                    <TableHead>Trabalho</TableHead>
+                    <TableHead>Trimestre</TableHead>
+                    <TableHead>Prova Professor</TableHead>
+                    <TableHead>Prova Final</TableHead>
                     <TableHead>Média</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -175,9 +196,13 @@ const StudentDashboard = () => {
                           <p className="text-sm text-gray-500">{nota.disciplina_codigo}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{nota.prova1 || '-'}</TableCell>
-                      <TableCell>{nota.prova2 || '-'}</TableCell>
-                      <TableCell>{nota.trabalho || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-purple-600">
+                          {nota.trimestre}º Trim
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{nota.prova_professor?.toFixed(1) || '-'}</TableCell>
+                      <TableCell>{nota.prova_final?.toFixed(1) || '-'}</TableCell>
                       <TableCell>
                         <Badge 
                           className={`${getStatusColor(nota.media_final || 0)} text-white`}
