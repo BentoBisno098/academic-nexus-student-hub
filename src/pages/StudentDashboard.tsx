@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,8 +76,8 @@ const StudentDashboard = () => {
         prova_professor: nota.prova_professor,
         prova_final: nota.prova_final,
         media_final: nota.media_final,
-        disciplina_nome: nota.disciplinas?.nome || '',
-        disciplina_codigo: nota.disciplinas?.codigo || ''
+        disciplina_nome: (nota.disciplinas as any)?.nome || '',
+        disciplina_codigo: (nota.disciplinas as any)?.codigo || ''
       })) || [];
 
       setNotas(notasFormatted);

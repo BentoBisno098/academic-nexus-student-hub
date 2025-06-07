@@ -8,6 +8,7 @@ import { LogOut } from 'lucide-react';
 import AlunosTab from '@/components/admin/AlunosTab';
 import DisciplinasTab from '@/components/admin/DisciplinasTab';
 import NotasTab from '@/components/admin/NotasTab';
+import HorariosTab from '@/components/admin/HorariosTab';
 
 const AdminPanel = () => {
   const [user, setUser] = useState<any>(null);
@@ -170,14 +171,15 @@ const AdminPanel = () => {
       <div className="max-w-7xl mx-auto p-6">
         <div className="mb-6">
           <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-          <p className="text-gray-600 mt-2">Gerencie alunos, disciplinas e notas</p>
+          <p className="text-gray-600 mt-2">Gerencie alunos, disciplinas, notas e horários</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="disciplinas">Disciplinas</TabsTrigger>
             <TabsTrigger value="notas">Notas</TabsTrigger>
+            <TabsTrigger value="horarios">Horários</TabsTrigger>
           </TabsList>
           
           <TabsContent value="alunos" className="mt-6">
@@ -190,6 +192,10 @@ const AdminPanel = () => {
           
           <TabsContent value="notas" className="mt-6">
             <NotasTab />
+          </TabsContent>
+          
+          <TabsContent value="horarios" className="mt-6">
+            <HorariosTab />
           </TabsContent>
         </Tabs>
       </div>
