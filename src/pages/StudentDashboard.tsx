@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Clock, FileText, User } from 'lucide-react';
+import { LogOut, FileText, User } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface StudentData {
@@ -28,20 +28,9 @@ interface Nota {
   disciplina_codigo: string;
 }
 
-interface Horario {
-  id: string;
-  dia: string;
-  inicio: string;
-  fim: string;
-  turma: string;
-  disciplina_nome: string;
-  disciplina_codigo: string;
-}
-
 const StudentDashboard = () => {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [notas, setNotas] = useState<Nota[]>([]);
-  const [horarios, setHorarios] = useState<Horario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -73,14 +62,6 @@ const StudentDashboard = () => {
       if (notasError) throw notasError;
       setNotas(notasData || []);
 
-      // Carregar horários
-      const { data: horariosData, error: horariosError } = await supabase.rpc('get_aluno_horarios', {
-        p_session_token: sessionToken
-      });
-
-      if (horariosError) throw horariosError;
-      setHorarios(horariosData || []);
-
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -107,14 +88,6 @@ const StudentDashboard = () => {
     if (media >= 10) return 'bg-yellow-500';
     return 'bg-red-500';
   };
-
-  const diasOrdem = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-  const horariosOrdenados = horarios.sort((a, b) => {
-    const diaA = diasOrdem.indexOf(a.dia);
-    const diaB = diasOrdem.indexOf(b.dia);
-    if (diaA !== diaB) return diaA - diaB;
-    return a.inicio.localeCompare(b.inicio);
-  });
 
   if (isLoading) {
     return (
@@ -171,99 +144,54 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Notas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Minhas Notas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {notas.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhuma nota encontrada</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Disciplina</TableHead>
-                      <TableHead>P1</TableHead>
-                      <TableHead>P2</TableHead>
-                      <TableHead>Trabalho</TableHead>
-                      <TableHead>Média</TableHead>
+        {/* Notas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="h-5 w-5 mr-2" />
+              Minhas Notas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {notas.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Nenhuma nota encontrada</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Disciplina</TableHead>
+                    <TableHead>P1</TableHead>
+                    <TableHead>P2</TableHead>
+                    <TableHead>Trabalho</TableHead>
+                    <TableHead>Média</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {notas.map((nota) => (
+                    <TableRow key={nota.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{nota.disciplina_nome}</p>
+                          <p className="text-sm text-gray-500">{nota.disciplina_codigo}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{nota.prova1 || '-'}</TableCell>
+                      <TableCell>{nota.prova2 || '-'}</TableCell>
+                      <TableCell>{nota.trabalho || '-'}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={`${getStatusColor(nota.media_final || 0)} text-white`}
+                        >
+                          {nota.media_final?.toFixed(1) || '-'}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {notas.map((nota) => (
-                      <TableRow key={nota.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{nota.disciplina_nome}</p>
-                            <p className="text-sm text-gray-500">{nota.disciplina_codigo}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{nota.prova1 || '-'}</TableCell>
-                        <TableCell>{nota.prova2 || '-'}</TableCell>
-                        <TableCell>{nota.trabalho || '-'}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            className={`${getStatusColor(nota.media_final || 0)} text-white`}
-                          >
-                            {nota.media_final?.toFixed(1) || '-'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Horários */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="h-5 w-5 mr-2" />
-                Meus Horários - {studentData?.turma}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {horariosOrdenados.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhum horário encontrado</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Dia</TableHead>
-                      <TableHead>Horário</TableHead>
-                      <TableHead>Disciplina</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {horariosOrdenados.map((horario) => (
-                      <TableRow key={horario.id}>
-                        <TableCell>
-                          <Badge variant="outline">{horario.dia}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {horario.inicio} - {horario.fim}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{horario.disciplina_nome}</p>
-                            <p className="text-sm text-gray-500">{horario.disciplina_codigo}</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
