@@ -23,9 +23,20 @@ interface Nota {
   disciplina_codigo: string;
 }
 
+interface Schedule {
+  id: string;
+  dia: string;
+  inicio: string;
+  fim: string;
+  turma: string;
+  disciplina_nome: string;
+  disciplina_codigo: string;
+}
+
 export const useStudentData = () => {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [notas, setNotas] = useState<Nota[]>([]);
+  const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,14 +51,15 @@ export const useStudentData = () => {
         return;
       }
 
-      setStudentData(JSON.parse(studentDataStr));
-      loadStudentData(sessionToken);
+      const parsedStudentData = JSON.parse(studentDataStr);
+      setStudentData(parsedStudentData);
+      loadStudentData(sessionToken, parsedStudentData);
     };
 
     checkAuth();
   }, [navigate]);
 
-  const loadStudentData = async (sessionToken: string) => {
+  const loadStudentData = async (sessionToken: string, student: StudentData) => {
     try {
       // Carregar notas trimestrais
       const { data: notasData, error: notasError } = await supabase
@@ -61,11 +73,11 @@ export const useStudentData = () => {
           disciplinas!notas_disciplina_id_fkey (nome, codigo)
         `)
         .not('trimestre', 'is', null)
-        .eq('aluno_id', JSON.parse(localStorage.getItem('studentData') || '{}').id);
+        .eq('aluno_id', student.id);
 
       if (notasError) throw notasError;
       
-      // Transformar dados para o formato esperado
+      // Transformar dados das notas para o formato esperado
       const notasFormatted = notasData?.map(nota => ({
         id: nota.id,
         trimestre: nota.trimestre,
@@ -77,6 +89,48 @@ export const useStudentData = () => {
       })) || [];
 
       setNotas(notasFormatted);
+
+      // Carregar horários da turma
+      const { data: horariosData, error: horariosError } = await supabase
+        .from('horarios')
+        .select(`
+          id,
+          dia,
+          inicio,
+          fim,
+          turma,
+          disciplinas!horarios_disciplina_id_fkey (nome, codigo)
+        `)
+        .eq('turma', student.turma);
+
+      if (horariosError) throw horariosError;
+
+      // Transformar dados dos horários para o formato esperado
+      const horariosFormatted = horariosData?.map(horario => ({
+        id: horario.id,
+        dia: horario.dia,
+        inicio: horario.inicio,
+        fim: horario.fim,
+        turma: horario.turma,
+        disciplina_nome: (horario.disciplinas as any)?.nome || '',
+        disciplina_codigo: (horario.disciplinas as any)?.codigo || ''
+      })) || [];
+
+      // Ordenar por dia da semana e hora
+      const diasOrdem = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      
+      horariosFormatted.sort((a, b) => {
+        const diaA = diasOrdem.indexOf(a.dia);
+        const diaB = diasOrdem.indexOf(b.dia);
+        
+        if (diaA !== diaB) {
+          return diaA - diaB;
+        }
+        
+        return a.inicio.localeCompare(b.inicio);
+      });
+
+      setSchedule(horariosFormatted);
 
     } catch (error: any) {
       toast({
@@ -102,6 +156,7 @@ export const useStudentData = () => {
   return {
     studentData,
     notas,
+    schedule,
     isLoading,
     handleLogout
   };
