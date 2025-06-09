@@ -1,13 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Clock } from 'lucide-react';
 
@@ -18,7 +17,7 @@ interface Horario {
   inicio: string;
   fim: string;
   turma: string;
-  disciplinas?: {
+  disciplinas: {
     nome: string;
     codigo: string;
   };
@@ -34,19 +33,18 @@ const HorariosTab = () => {
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    disciplina_id: '',
-    dia: '',
-    inicio: '',
-    fim: '',
-    turma: ''
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
+
+  const [selectedDisciplina, setSelectedDisciplina] = useState('');
+  const [diaSemana, setDiaSemana] = useState('');
+  const [horaInicio, setHoraInicio] = useState('');
+  const [horaFim, setHoraFim] = useState('');
+  const [sala, setSala] = useState('');
 
   const diasSemana = [
     'Segunda-feira',
-    'Terça-feira',
+    'Terça-feira', 
     'Quarta-feira',
     'Quinta-feira',
     'Sexta-feira',
@@ -70,22 +68,28 @@ const HorariosTab = () => {
           fim,
           turma,
           disciplinas!horarios_disciplina_id_fkey (nome, codigo)
-        `)
-        .order('dia')
-        .order('inicio');
+        `);
 
       if (horariosError) throw horariosError;
+
+      // Transform the data to match our interface
+      const formattedHorarios = horariosData?.map(horario => ({
+        ...horario,
+        disciplinas: Array.isArray(horario.disciplinas) 
+          ? horario.disciplinas[0] 
+          : horario.disciplinas
+      })) || [];
+
+      setHorarios(formattedHorarios);
 
       // Carregar disciplinas
       const { data: disciplinasData, error: disciplinasError } = await supabase
         .from('disciplinas')
-        .select('id, nome, codigo')
-        .order('nome');
+        .select('id, nome, codigo');
 
       if (disciplinasError) throw disciplinasError;
-
-      setHorarios(horariosData || []);
       setDisciplinas(disciplinasData || []);
+
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -100,35 +104,26 @@ const HorariosTab = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.disciplina_id || !formData.dia || !formData.inicio || !formData.fim || !formData.turma) {
-      toast({
-        title: "Erro",
-        description: "Todos os campos são obrigatórios",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('horarios')
-        .insert([formData]);
+        .insert({
+          disciplina_id: selectedDisciplina,
+          dia: diaSemana,
+          inicio: horaInicio,
+          fim: horaFim,
+          turma: sala // Using sala as turma for now
+        });
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Horário adicionado com sucesso"
+        description: "Horário adicionado com sucesso!"
       });
 
-      setFormData({
-        disciplina_id: '',
-        dia: '',
-        inicio: '',
-        fim: '',
-        turma: ''
-      });
-      setIsDialogOpen(false);
+      setIsModalOpen(false);
+      resetForm();
       loadData();
     } catch (error: any) {
       toast({
@@ -152,9 +147,9 @@ const HorariosTab = () => {
 
       toast({
         title: "Sucesso",
-        description: "Horário excluído com sucesso"
+        description: "Horário excluído com sucesso!"
       });
-      
+
       loadData();
     } catch (error: any) {
       toast({
@@ -165,32 +160,16 @@ const HorariosTab = () => {
     }
   };
 
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    return time.substring(0, 5); // Remove segundos se houver
+  const resetForm = () => {
+    setSelectedDisciplina('');
+    setDiaSemana('');
+    setHoraInicio('');
+    setHoraFim('');
+    setSala('');
   };
-
-  const getOrderIndex = (dia: string) => {
-    return diasSemana.indexOf(dia);
-  };
-
-  const sortedHorarios = [...horarios].sort((a, b) => {
-    const diaA = getOrderIndex(a.dia);
-    const diaB = getOrderIndex(b.dia);
-    
-    if (diaA !== diaB) {
-      return diaA - diaB;
-    }
-    
-    return a.inicio.localeCompare(b.inicio);
-  });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <div className="text-center py-4">Carregando horários...</div>;
   }
 
   return (
@@ -201,22 +180,21 @@ const HorariosTab = () => {
             <Clock className="h-5 w-5 mr-2" />
             Horários
           </CardTitle>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
                 <span>Adicionar Horário</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Horário</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="disciplina">Disciplina</Label>
-                  <Select value={formData.disciplina_id} onValueChange={(value) => setFormData({...formData, disciplina_id: value})}>
+                  <Select value={selectedDisciplina} onValueChange={setSelectedDisciplina}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma disciplina" />
                     </SelectTrigger>
@@ -232,7 +210,7 @@ const HorariosTab = () => {
 
                 <div>
                   <Label htmlFor="dia">Dia da Semana</Label>
-                  <Select value={formData.dia} onValueChange={(value) => setFormData({...formData, dia: value})}>
+                  <Select value={diaSemana} onValueChange={setDiaSemana}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o dia" />
                     </SelectTrigger>
@@ -251,8 +229,8 @@ const HorariosTab = () => {
                   <Input
                     id="inicio"
                     type="time"
-                    value={formData.inicio}
-                    onChange={(e) => setFormData({...formData, inicio: e.target.value})}
+                    value={horaInicio}
+                    onChange={(e) => setHoraInicio(e.target.value)}
                     required
                   />
                 </div>
@@ -262,20 +240,19 @@ const HorariosTab = () => {
                   <Input
                     id="fim"
                     type="time"
-                    value={formData.fim}
-                    onChange={(e) => setFormData({...formData, fim: e.target.value})}
+                    value={horaFim}
+                    onChange={(e) => setHoraFim(e.target.value)}
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="turma">Turma</Label>
+                  <Label htmlFor="sala">Sala</Label>
                   <Input
-                    id="turma"
-                    type="text"
-                    value={formData.turma}
-                    onChange={(e) => setFormData({...formData, turma: e.target.value})}
-                    placeholder="Ex: 1A, 2B, etc."
+                    id="sala"
+                    value={sala}
+                    onChange={(e) => setSala(e.target.value)}
+                    placeholder="Ex: Sala 101"
                     required
                   />
                 </div>
@@ -289,21 +266,22 @@ const HorariosTab = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {sortedHorarios.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Nenhum horário cadastrado</p>
+        {horarios.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Nenhum horário encontrado</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Disciplina</TableHead>
                 <TableHead>Dia</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Turma</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHead>Início</TableHead>
+                <TableHead>Término</TableHead>
+                <TableHead>Sala</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedHorarios.map((horario) => (
+              {horarios.map((horario) => (
                 <TableRow key={horario.id}>
                   <TableCell>
                     <div>
@@ -312,16 +290,15 @@ const HorariosTab = () => {
                     </div>
                   </TableCell>
                   <TableCell>{horario.dia}</TableCell>
-                  <TableCell>
-                    {formatTime(horario.inicio)} - {formatTime(horario.fim)}
-                  </TableCell>
+                  <TableCell>{horario.inicio}</TableCell>
+                  <TableCell>{horario.fim}</TableCell>
                   <TableCell>{horario.turma}</TableCell>
                   <TableCell>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(horario.id)}
-                      className="flex items-center space-x-1"
+                      className="text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
