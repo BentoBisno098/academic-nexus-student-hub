@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -137,11 +136,11 @@ const NotasTrimestre = () => {
     const key = `${selectedAluno}-${selectedDisciplina}`;
     const numValue = value === '' ? null : parseFloat(value);
     
-    // Validar se está entre 0 e 20
-    if (numValue !== null && (numValue < 0 || numValue > 20)) {
+    // Validar se está entre 1 e 20
+    if (numValue !== null && (numValue < 1 || numValue > 20)) {
       toast({
         title: "Valor inválido",
-        description: "As notas devem estar entre 0 e 20",
+        description: "As notas devem estar entre 1 e 20",
         variant: "destructive"
       });
       return;
@@ -335,29 +334,29 @@ const NotasTrimestre = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor={`prof_${trimestre}`}>Prova do Professor (0-20)</Label>
+                  <Label htmlFor={`prof_${trimestre}`}>Prova do Professor (1-20)</Label>
                   <Input
                     id={`prof_${trimestre}`}
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="1"
                     max="20"
                     value={notasDoAluno?.[trimestre]?.prova_professor || ''}
                     onChange={(e) => updateNota(trimestre, 'prova_professor', e.target.value)}
-                    placeholder="0.0"
+                    placeholder="1.0"
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`final_${trimestre}`}>Prova Final (0-20)</Label>
+                  <Label htmlFor={`final_${trimestre}`}>Prova Final (1-20)</Label>
                   <Input
                     id={`final_${trimestre}`}
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="1"
                     max="20"
                     value={notasDoAluno?.[trimestre]?.prova_final || ''}
                     onChange={(e) => updateNota(trimestre, 'prova_final', e.target.value)}
-                    placeholder="0.0"
+                    placeholder="1.0"
                   />
                 </div>
                 {notasDoAluno?.[trimestre]?.prova_professor !== null && 

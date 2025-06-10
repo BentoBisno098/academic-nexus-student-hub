@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,6 +117,20 @@ const NotasTabComponent = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const provaProf = parseFloat(formData.prova_professor);
+    const provaFinal = parseFloat(formData.prova_final);
+    
+    // Validar se as notas estão entre 1 e 20
+    if (provaProf < 1 || provaProf > 20 || provaFinal < 1 || provaFinal > 20) {
+      toast({
+        title: "Valor inválido",
+        description: "As notas devem estar entre 1 e 20",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -126,8 +139,8 @@ const NotasTabComponent = () => {
         disciplina_id: formData.disciplina_id,
         ano_letivo: parseInt(formData.ano_letivo) || new Date().getFullYear(),
         trimestre: parseInt(formData.trimestre) || 1,
-        prova_professor: parseFloat(formData.prova_professor) || 0,
-        prova_final: parseFloat(formData.prova_final) || 0,
+        prova_professor: provaProf || 0,
+        prova_final: provaFinal || 0,
         prova1: null,
         prova2: null,
         trabalho: null
@@ -308,12 +321,12 @@ const NotasTabComponent = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="prova_professor">Prova Professor</Label>
+                  <Label htmlFor="prova_professor">Prova Professor (1-20)</Label>
                   <Input
                     id="prova_professor"
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="1"
                     max="20"
                     value={formData.prova_professor}
                     onChange={(e) => setFormData({...formData, prova_professor: e.target.value})}
@@ -321,12 +334,12 @@ const NotasTabComponent = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="prova_final">Prova Final</Label>
+                  <Label htmlFor="prova_final">Prova Final (1-20)</Label>
                   <Input
                     id="prova_final"
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="1"
                     max="20"
                     value={formData.prova_final}
                     onChange={(e) => setFormData({...formData, prova_final: e.target.value})}
