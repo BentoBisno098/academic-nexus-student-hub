@@ -19,6 +19,7 @@ interface Aluno {
   idade: number;
   curso: string;
   turma: string;
+  periodo: string;
 }
 
 const AlunosTab = () => {
@@ -30,13 +31,15 @@ const AlunosTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTurma, setFilterTurma] = useState('');
   const [filterCurso, setFilterCurso] = useState('');
+  const [filterPeriodo, setFilterPeriodo] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
     senha: '',
     idade: '',
     curso: '',
-    turma: ''
+    turma: '',
+    periodo: ''
   });
   const { toast } = useToast();
 
@@ -46,7 +49,7 @@ const AlunosTab = () => {
 
   useEffect(() => {
     filterAlunos();
-  }, [alunos, searchTerm, filterTurma, filterCurso]);
+  }, [alunos, searchTerm, filterTurma, filterCurso, filterPeriodo]);
 
   const loadAlunos = async () => {
     try {
@@ -87,6 +90,10 @@ const AlunosTab = () => {
       filtered = filtered.filter(aluno => aluno.curso === filterCurso);
     }
 
+    if (filterPeriodo) {
+      filtered = filtered.filter(aluno => aluno.periodo === filterPeriodo);
+    }
+
     setFilteredAlunos(filtered);
   };
 
@@ -101,7 +108,8 @@ const AlunosTab = () => {
         senha: formData.senha,
         idade: parseInt(formData.idade),
         curso: formData.curso,
-        turma: formData.turma
+        turma: formData.turma,
+        periodo: formData.periodo
       };
 
       if (editingId) {
@@ -141,7 +149,8 @@ const AlunosTab = () => {
       senha: aluno.senha || '',
       idade: aluno.idade?.toString() || '',
       curso: aluno.curso || '',
-      turma: aluno.turma || ''
+      turma: aluno.turma || '',
+      periodo: aluno.periodo || ''
     });
     setEditingId(aluno.id);
     setShowForm(true);
@@ -175,7 +184,8 @@ const AlunosTab = () => {
       senha: '',
       idade: '',
       curso: '',
-      turma: ''
+      turma: '',
+      periodo: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -205,7 +215,7 @@ const AlunosTab = () => {
             <CardTitle>{editingId ? 'Editar Aluno' : 'Novo Aluno'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="nome">Nome</Label>
                 <Input
@@ -259,7 +269,22 @@ const AlunosTab = () => {
                   onChange={(e) => setFormData({...formData, turma: e.target.value})}
                 />
               </div>
-              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
+              <div>
+                <Label htmlFor="periodo">Período</Label>
+                <Select 
+                  value={formData.periodo} 
+                  onValueChange={(value) => setFormData({...formData, periodo: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Manhã">Manhã</SelectItem>
+                    <SelectItem value="Tarde">Tarde</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-4">
                 <Button type="submit" disabled={isLoading}>
                   {editingId ? 'Atualizar' : 'Adicionar'}
                 </Button>
@@ -275,7 +300,7 @@ const AlunosTab = () => {
       {/* Filtros */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -307,6 +332,16 @@ const AlunosTab = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterPeriodo} onValueChange={setFilterPeriodo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os períodos</SelectItem>
+                <SelectItem value="Manhã">Manhã</SelectItem>
+                <SelectItem value="Tarde">Tarde</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -325,6 +360,7 @@ const AlunosTab = () => {
                 <TableHead>Idade</TableHead>
                 <TableHead>Curso</TableHead>
                 <TableHead>Turma</TableHead>
+                <TableHead>Período</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -339,6 +375,11 @@ const AlunosTab = () => {
                   <TableCell>{aluno.curso || 'N/A'}</TableCell>
                   <TableCell>
                     {aluno.turma && <Badge>{aluno.turma}</Badge>}
+                  </TableCell>
+                  <TableCell>
+                    {aluno.periodo && (
+                      <Badge variant="secondary">{aluno.periodo}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">

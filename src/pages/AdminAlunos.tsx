@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import AdminNavigation from '@/components/AdminNavigation';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ interface Aluno {
   curso: string;
   turma: string;
   idade: number;
+  periodo: string;
 }
 
 const AdminAlunos = () => {
@@ -29,12 +30,14 @@ const AdminAlunos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCurso, setFilterCurso] = useState('');
   const [filterTurma, setFilterTurma] = useState('');
+  const [filterPeriodo, setFilterPeriodo] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
     curso: '',
     turma: '',
-    idade: ''
+    idade: '',
+    periodo: ''
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,7 +56,7 @@ const AdminAlunos = () => {
 
   useEffect(() => {
     filterAlunos();
-  }, [alunos, searchTerm, filterCurso, filterTurma]);
+  }, [alunos, searchTerm, filterCurso, filterTurma, filterPeriodo]);
 
   const loadAlunos = async () => {
     try {
@@ -94,6 +97,10 @@ const AdminAlunos = () => {
       filtered = filtered.filter(aluno => aluno.turma === filterTurma);
     }
 
+    if (filterPeriodo) {
+      filtered = filtered.filter(aluno => aluno.periodo === filterPeriodo);
+    }
+
     setFilteredAlunos(filtered);
   };
 
@@ -107,7 +114,8 @@ const AdminAlunos = () => {
         codigo: formData.codigo,
         curso: formData.curso,
         turma: formData.turma,
-        idade: parseInt(formData.idade)
+        idade: parseInt(formData.idade),
+        periodo: formData.periodo
       };
 
       if (editingId) {
@@ -146,7 +154,8 @@ const AdminAlunos = () => {
       codigo: aluno.codigo,
       curso: aluno.curso,
       turma: aluno.turma,
-      idade: aluno.idade.toString()
+      idade: aluno.idade.toString(),
+      periodo: aluno.periodo || ''
     });
     setEditingId(aluno.id);
     setShowForm(true);
@@ -174,7 +183,7 @@ const AdminAlunos = () => {
   };
 
   const resetForm = () => {
-    setFormData({ nome: '', codigo: '', curso: '', turma: '', idade: '' });
+    setFormData({ nome: '', codigo: '', curso: '', turma: '', idade: '', periodo: '' });
     setEditingId(null);
     setShowForm(false);
   };
@@ -204,7 +213,7 @@ const AdminAlunos = () => {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label htmlFor="search">Buscar</Label>
                 <div className="relative">
@@ -246,6 +255,19 @@ const AdminAlunos = () => {
                   ))}
                 </select>
               </div>
+              <div>
+                <Label htmlFor="periodo-filter">Período</Label>
+                <select
+                  id="periodo-filter"
+                  value={filterPeriodo}
+                  onChange={(e) => setFilterPeriodo(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="">Todos os períodos</option>
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                </select>
+              </div>
               <div className="flex items-end">
                 <Button 
                   variant="outline" 
@@ -253,6 +275,7 @@ const AdminAlunos = () => {
                     setSearchTerm('');
                     setFilterCurso('');
                     setFilterTurma('');
+                    setFilterPeriodo('');
                   }}
                 >
                   Limpar Filtros
@@ -316,6 +339,21 @@ const AdminAlunos = () => {
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="periodo">Período</Label>
+                  <Select 
+                    value={formData.periodo} 
+                    onValueChange={(value) => setFormData({...formData, periodo: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Manhã">Manhã</SelectItem>
+                      <SelectItem value="Tarde">Tarde</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex items-end space-x-2">
                   <Button type="submit" disabled={isLoading}>
                     {editingId ? 'Atualizar' : 'Adicionar'}
@@ -346,6 +384,7 @@ const AdminAlunos = () => {
                       <th className="text-left p-2">Código</th>
                       <th className="text-left p-2">Curso</th>
                       <th className="text-left p-2">Turma</th>
+                      <th className="text-left p-2">Período</th>
                       <th className="text-left p-2">Idade</th>
                       <th className="text-left p-2">Ações</th>
                     </tr>
@@ -359,6 +398,11 @@ const AdminAlunos = () => {
                         </td>
                         <td className="p-2">{aluno.curso}</td>
                         <td className="p-2">{aluno.turma}</td>
+                        <td className="p-2">
+                          {aluno.periodo && (
+                            <Badge variant="secondary">{aluno.periodo}</Badge>
+                          )}
+                        </td>
                         <td className="p-2">{aluno.idade}</td>
                         <td className="p-2">
                           <div className="flex space-x-2">

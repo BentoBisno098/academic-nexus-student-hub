@@ -99,6 +99,7 @@ export type Database = {
           id: string
           idade: number | null
           nome: string
+          periodo: string | null
           senha: string | null
           turma: string | null
         }
@@ -108,6 +109,7 @@ export type Database = {
           id?: string
           idade?: number | null
           nome: string
+          periodo?: string | null
           senha?: string | null
           turma?: string | null
         }
@@ -117,6 +119,7 @@ export type Database = {
           id?: string
           idade?: number | null
           nome?: string
+          periodo?: string | null
           senha?: string | null
           turma?: string | null
         }

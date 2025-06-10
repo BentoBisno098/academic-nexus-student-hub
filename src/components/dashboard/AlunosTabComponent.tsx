@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ interface Aluno {
   curso: string;
   turma: string;
   idade: number;
+  periodo: string;
 }
 
 const AlunosTabComponent = () => {
@@ -32,7 +34,8 @@ const AlunosTabComponent = () => {
     senha: '',
     curso: '',
     turma: '',
-    idade: ''
+    idade: '',
+    periodo: ''
   });
   const { toast } = useToast();
 
@@ -89,7 +92,8 @@ const AlunosTabComponent = () => {
         senha: formData.senha,
         curso: formData.curso,
         turma: formData.turma,
-        idade: parseInt(formData.idade)
+        idade: parseInt(formData.idade),
+        periodo: formData.periodo
       };
 
       if (editingId) {
@@ -129,7 +133,8 @@ const AlunosTabComponent = () => {
       senha: aluno.senha || '',
       curso: aluno.curso,
       turma: aluno.turma,
-      idade: aluno.idade.toString()
+      idade: aluno.idade.toString(),
+      periodo: aluno.periodo || ''
     });
     setEditingId(aluno.id);
     setShowForm(true);
@@ -157,7 +162,7 @@ const AlunosTabComponent = () => {
   };
 
   const resetForm = () => {
-    setFormData({ nome: '', codigo: '', senha: '', curso: '', turma: '', idade: '' });
+    setFormData({ nome: '', codigo: '', senha: '', curso: '', turma: '', idade: '', periodo: '' });
     setEditingId(null);
     setShowForm(false);
   };
@@ -200,7 +205,7 @@ const AlunosTabComponent = () => {
             <CardTitle>{editingId ? 'Editar Aluno' : 'Novo Aluno'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="nome">Nome</Label>
                 <Input
@@ -257,7 +262,22 @@ const AlunosTabComponent = () => {
                   required
                 />
               </div>
-              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-3">
+              <div>
+                <Label htmlFor="periodo">Período</Label>
+                <Select 
+                  value={formData.periodo} 
+                  onValueChange={(value) => setFormData({...formData, periodo: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Manhã">Manhã</SelectItem>
+                    <SelectItem value="Tarde">Tarde</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end space-x-2 md:col-span-2 lg:col-span-4">
                 <Button type="submit" disabled={isLoading}>
                   {editingId ? 'Atualizar' : 'Adicionar'}
                 </Button>
@@ -287,6 +307,7 @@ const AlunosTabComponent = () => {
                     <th className="text-left p-2">Código</th>
                     <th className="text-left p-2">Curso</th>
                     <th className="text-left p-2">Turma</th>
+                    <th className="text-left p-2">Período</th>
                     <th className="text-left p-2">Idade</th>
                     <th className="text-left p-2">Ações</th>
                   </tr>
@@ -300,6 +321,11 @@ const AlunosTabComponent = () => {
                       </td>
                       <td className="p-2">{aluno.curso}</td>
                       <td className="p-2">{aluno.turma}</td>
+                      <td className="p-2">
+                        {aluno.periodo && (
+                          <Badge variant="secondary">{aluno.periodo}</Badge>
+                        )}
+                      </td>
                       <td className="p-2">{aluno.idade}</td>
                       <td className="p-2">
                         <div className="flex space-x-2">
