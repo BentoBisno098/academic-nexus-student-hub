@@ -9,16 +9,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4 relative">
-      {/* Imagem no canto superior esquerdo */}
-      <div className="absolute top-4 left-4">
-        <img 
-          src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
-          alt="Logo do Sistema Acadêmico" 
-          className="w-16 h-16 rounded-full object-cover shadow-lg"
-        />
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl flex-1 flex flex-col justify-center">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
