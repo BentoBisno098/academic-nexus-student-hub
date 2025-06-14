@@ -57,6 +57,17 @@ const HorariosTab = () => {
     'Sábado'
   ];
 
+  const turmasDisponiveis = [
+    'A',
+    'B', 
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H'
+  ];
+
   useEffect(() => {
     loadHorarios();
     loadDisciplinas();
@@ -283,13 +294,16 @@ const HorariosTab = () => {
 
                   <div>
                     <Label htmlFor="turma">Turma</Label>
-                    <Input
-                      id="turma"
-                      value={formData.turma}
-                      onChange={(e) => setFormData({...formData, turma: e.target.value})}
-                      placeholder="Ex: 3A, 2B"
-                      required
-                    />
+                    <Select value={formData.turma} onValueChange={(value) => setFormData({...formData, turma: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a turma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {turmasDisponiveis.map((turma) => (
+                          <SelectItem key={turma} value={turma}>{turma}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
