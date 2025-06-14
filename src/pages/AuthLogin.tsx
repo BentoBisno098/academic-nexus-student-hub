@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -195,7 +194,7 @@ const AuthLogin = () => {
           <div className="mt-6">
             <Button 
               variant="ghost" 
-              className="w-full"
+              className="w-full text-white hover:text-white"
               onClick={() => setIsSignUp(!isSignUp)}
             >
               {isSignUp ? 'Já tem conta? Fazer login' : 'Criar nova conta'}
