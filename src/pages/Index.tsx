@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Users, GraduationCap } from 'lucide-react';
-import InstallButton from '@/components/InstallButton';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -15,10 +14,6 @@ const Index = () => {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
           <p className="text-xl text-gray-600">Gerencie alunos, disciplinas, notas e horários de forma simples e eficiente</p>
-          
-          <div className="mt-6 flex justify-center">
-            <InstallButton />
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

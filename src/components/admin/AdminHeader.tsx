@@ -5,7 +5,6 @@ import { LogOut, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import InstallButton from '@/components/InstallButton';
 
 const AdminHeader = () => {
   const navigate = useNavigate();
@@ -39,7 +38,6 @@ const AdminHeader = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <InstallButton />
             <Button
               variant="outline"
               size="sm"

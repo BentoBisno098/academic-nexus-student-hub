@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
-import InstallButton from '@/components/InstallButton';
 
 interface StudentHeaderProps {
   studentName?: string;
@@ -22,7 +21,6 @@ const StudentHeader = ({ studentName, onLogout }: StudentHeaderProps) => {
             <span className="text-sm text-gray-600">
               Bem-vindo, {studentName}
             </span>
-            <InstallButton />
             <Button
               variant="outline"
               size="sm"
