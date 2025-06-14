@@ -10,6 +10,7 @@ interface StudentData {
   codigo: string;
   curso: string;
   turma: string;
+  sala?: string;
   idade: number;
 }
 
@@ -29,6 +30,7 @@ interface Schedule {
   inicio: string;
   fim: string;
   turma: string;
+  sala: string;
   disciplina_nome: string;
   disciplina_codigo: string;
 }
@@ -91,7 +93,7 @@ export const useStudentData = () => {
       setNotas(notasFormatted);
 
       // Carregar horários da turma do aluno logado
-      // Lógica: buscar horários onde disciplina_id pertence a disciplinas da mesma turma do aluno
+      // Filtrar horários onde a turma corresponde à turma do aluno
       const { data: horariosData, error: horariosError } = await supabase
         .from('horarios')
         .select(`
@@ -100,6 +102,7 @@ export const useStudentData = () => {
           inicio,
           fim,
           turma,
+          sala,
           disciplinas!horarios_disciplina_id_fkey (nome, codigo)
         `)
         .eq('turma', student.turma);
@@ -113,6 +116,7 @@ export const useStudentData = () => {
         inicio: horario.inicio,
         fim: horario.fim,
         turma: horario.turma,
+        sala: horario.sala || '',
         disciplina_nome: (horario.disciplinas as any)?.nome || '',
         disciplina_codigo: (horario.disciplinas as any)?.codigo || ''
       })) || [];

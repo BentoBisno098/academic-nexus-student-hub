@@ -9,6 +9,7 @@ interface HorarioItem {
   inicio: string;
   fim: string;
   turma: string;
+  sala: string;
   disciplina_nome: string;
   disciplina_codigo: string;
 }
@@ -108,7 +109,7 @@ const MeusHorarios = ({ schedule, isLoading }: MeusHorariosProps) => {
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-4 w-4 mr-1" />
-                            Sala: {horario.turma}
+                            {horario.sala ? `Sala: ${horario.sala}` : `Turma: ${horario.turma}`}
                           </span>
                         </div>
                       </div>

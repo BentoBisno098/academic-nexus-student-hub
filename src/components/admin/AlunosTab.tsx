@@ -20,6 +20,7 @@ interface Aluno {
   curso: string;
   turma: string;
   periodo: string;
+  sala: string;
 }
 
 const AlunosTab = () => {
@@ -39,7 +40,8 @@ const AlunosTab = () => {
     idade: '',
     curso: '',
     turma: '',
-    periodo: ''
+    periodo: '',
+    sala: ''
   });
   const { toast } = useToast();
 
@@ -109,7 +111,8 @@ const AlunosTab = () => {
         idade: parseInt(formData.idade),
         curso: formData.curso,
         turma: formData.turma,
-        periodo: formData.periodo
+        periodo: formData.periodo,
+        sala: formData.sala
       };
 
       if (editingId) {
@@ -150,7 +153,8 @@ const AlunosTab = () => {
       idade: aluno.idade?.toString() || '',
       curso: aluno.curso || '',
       turma: aluno.turma || '',
-      periodo: aluno.periodo || ''
+      periodo: aluno.periodo || '',
+      sala: aluno.sala || ''
     });
     setEditingId(aluno.id);
     setShowForm(true);
@@ -185,7 +189,8 @@ const AlunosTab = () => {
       idade: '',
       curso: '',
       turma: '',
-      periodo: ''
+      periodo: '',
+      sala: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -267,6 +272,15 @@ const AlunosTab = () => {
                   id="turma"
                   value={formData.turma}
                   onChange={(e) => setFormData({...formData, turma: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="sala">Sala</Label>
+                <Input
+                  id="sala"
+                  value={formData.sala}
+                  onChange={(e) => setFormData({...formData, sala: e.target.value})}
+                  placeholder="Ex: Sala 101"
                 />
               </div>
               <div>
@@ -360,6 +374,7 @@ const AlunosTab = () => {
                 <TableHead>Idade</TableHead>
                 <TableHead>Curso</TableHead>
                 <TableHead>Turma</TableHead>
+                <TableHead>Sala</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -375,6 +390,9 @@ const AlunosTab = () => {
                   <TableCell>{aluno.curso || 'N/A'}</TableCell>
                   <TableCell>
                     {aluno.turma && <Badge>{aluno.turma}</Badge>}
+                  </TableCell>
+                  <TableCell>
+                    {aluno.sala && <Badge variant="secondary">{aluno.sala}</Badge>}
                   </TableCell>
                   <TableCell>
                     {aluno.periodo && (

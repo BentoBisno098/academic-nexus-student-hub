@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ interface Horario {
   inicio: string;
   fim: string;
   turma: string;
+  sala: string;
   disciplinas: {
     nome: string;
     codigo: string;
@@ -40,6 +42,7 @@ const HorariosTab = () => {
   const [diaSemana, setDiaSemana] = useState('');
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFim, setHoraFim] = useState('');
+  const [turma, setTurma] = useState('');
   const [sala, setSala] = useState('');
 
   const diasSemana = [
@@ -67,6 +70,7 @@ const HorariosTab = () => {
           inicio,
           fim,
           turma,
+          sala,
           disciplinas!horarios_disciplina_id_fkey (nome, codigo)
         `);
 
@@ -112,7 +116,8 @@ const HorariosTab = () => {
           dia: diaSemana,
           inicio: horaInicio,
           fim: horaFim,
-          turma: sala // Using sala as turma for now
+          turma: turma,
+          sala: sala
         });
 
       if (error) throw error;
@@ -165,6 +170,7 @@ const HorariosTab = () => {
     setDiaSemana('');
     setHoraInicio('');
     setHoraFim('');
+    setTurma('');
     setSala('');
   };
 
@@ -247,6 +253,17 @@ const HorariosTab = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="turma">Turma</Label>
+                  <Input
+                    id="turma"
+                    value={turma}
+                    onChange={(e) => setTurma(e.target.value)}
+                    placeholder="Ex: 1º Ano A"
+                    required
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="sala">Sala</Label>
                   <Input
                     id="sala"
@@ -276,6 +293,7 @@ const HorariosTab = () => {
                 <TableHead>Dia</TableHead>
                 <TableHead>Início</TableHead>
                 <TableHead>Término</TableHead>
+                <TableHead>Turma</TableHead>
                 <TableHead>Sala</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -293,6 +311,7 @@ const HorariosTab = () => {
                   <TableCell>{horario.inicio}</TableCell>
                   <TableCell>{horario.fim}</TableCell>
                   <TableCell>{horario.turma}</TableCell>
+                  <TableCell>{horario.sala}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
