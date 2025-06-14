@@ -207,6 +207,12 @@ const AdminPanelLogin = () => {
               </Button>
             </form>
 
+            <div className="mt-4 text-center">
+              <Button variant="link" className="text-sm">
+                Criar nova conta
+              </Button>
+            </div>
+
             <Alert className="mt-4">
               <AlertDescription>
                 <strong>Info:</strong> Entre com suas credenciais de administrador.
