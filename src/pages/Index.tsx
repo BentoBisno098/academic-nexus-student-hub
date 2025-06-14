@@ -66,6 +66,9 @@ const Index = () => {
         <p className="text-sm text-gray-400">
           Criado Por Simão Miguel Mbachi
         </p>
+        <p className="text-sm text-gray-400 mt-1">
+          Contactos: +244 927 464 676/ +244 924 066 616
+        </p>
       </footer>
     </div>
   );
