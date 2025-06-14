@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,17 +10,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl flex-1 flex flex-col justify-center">
-        {/* Logo PAC no canto superior esquerdo acima do título */}
-        <div className="mb-8">
+        <div className="text-center mb-8">
+          {/* Logo PAC centralizada acima do título */}
           <img 
             src="/lovable-uploads/d764889b-9997-433e-9334-393bf0086de7.png" 
             alt="Logo PAC" 
-            className="w-20 h-16 object-contain mb-4"
+            className="w-20 h-16 object-contain mx-auto mb-4"
           />
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
-            <p className="text-xl text-gray-600">Gerencie alunos, disciplinas, notas e horários de forma simples e eficiente</p>
-          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
+          <p className="text-xl text-gray-600">Gerencie alunos, disciplinas, notas e horários de forma simples e eficiente</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
