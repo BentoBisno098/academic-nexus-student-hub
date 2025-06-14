@@ -209,6 +209,7 @@ export type Database = {
           fim: string | null
           id: string
           inicio: string | null
+          sala: string | null
           turma: string | null
         }
         Insert: {
@@ -217,6 +218,7 @@ export type Database = {
           fim?: string | null
           id?: string
           inicio?: string | null
+          sala?: string | null
           turma?: string | null
         }
         Update: {
@@ -225,6 +227,7 @@ export type Database = {
           fim?: string | null
           id?: string
           inicio?: string | null
+          sala?: string | null
           turma?: string | null
         }
         Relationships: [

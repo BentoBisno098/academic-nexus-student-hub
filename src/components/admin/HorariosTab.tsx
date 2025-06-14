@@ -22,7 +22,7 @@ interface Horario {
   disciplinas: {
     nome: string;
     codigo: string;
-  };
+  } | null;
 }
 
 interface Disciplina {
@@ -79,9 +79,7 @@ const HorariosTab = () => {
       // Transform the data to match our interface
       const formattedHorarios = horariosData?.map(horario => ({
         ...horario,
-        disciplinas: Array.isArray(horario.disciplinas) 
-          ? horario.disciplinas[0] 
-          : horario.disciplinas
+        disciplinas: horario.disciplinas || null
       })) || [];
 
       setHorarios(formattedHorarios);
@@ -95,6 +93,7 @@ const HorariosTab = () => {
       setDisciplinas(disciplinasData || []);
 
     } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados",
@@ -107,6 +106,15 @@ const HorariosTab = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedDisciplina || !diaSemana || !horaInicio || !horaFim || !turma || !sala) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       const { error } = await supabase
@@ -131,6 +139,7 @@ const HorariosTab = () => {
       resetForm();
       loadData();
     } catch (error: any) {
+      console.error('Erro ao adicionar horário:', error);
       toast({
         title: "Erro",
         description: "Erro ao adicionar horário",
@@ -157,6 +166,7 @@ const HorariosTab = () => {
 
       loadData();
     } catch (error: any) {
+      console.error('Erro ao excluir horário:', error);
       toast({
         title: "Erro",
         description: "Erro ao excluir horário",
@@ -303,15 +313,15 @@ const HorariosTab = () => {
                 <TableRow key={horario.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{horario.disciplinas?.nome}</p>
-                      <p className="text-sm text-gray-500">{horario.disciplinas?.codigo}</p>
+                      <p className="font-medium">{horario.disciplinas?.nome || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{horario.disciplinas?.codigo || 'N/A'}</p>
                     </div>
                   </TableCell>
                   <TableCell>{horario.dia}</TableCell>
                   <TableCell>{horario.inicio}</TableCell>
                   <TableCell>{horario.fim}</TableCell>
                   <TableCell>{horario.turma}</TableCell>
-                  <TableCell>{horario.sala}</TableCell>
+                  <TableCell>{horario.sala || 'N/A'}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
