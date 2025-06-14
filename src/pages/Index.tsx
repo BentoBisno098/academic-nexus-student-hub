@@ -10,16 +10,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
-      {/* Logo PAC no canto superior esquerdo como barra fixa */}
-      <div className="fixed top-0 left-0 z-50 bg-white shadow-md">
-        <img 
-          src="/lovable-uploads/d764889b-9997-433e-9334-393bf0086de7.png" 
-          alt="Logo PAC" 
-          className="w-20 h-16 object-contain p-2"
-        />
-      </div>
-
       <div className="w-full max-w-4xl flex-1 flex flex-col justify-center">
+        {/* Logo PAC centralizada acima do título */}
+        <div className="text-center mb-6">
+          <img 
+            src="/lovable-uploads/d764889b-9997-433e-9334-393bf0086de7.png" 
+            alt="Logo PAC" 
+            className="w-24 h-20 object-contain mx-auto mb-4"
+          />
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
           <p className="text-xl text-gray-600">Gerencie alunos, disciplinas, notas e horários de forma simples e eficiente</p>
