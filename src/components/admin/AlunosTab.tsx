@@ -20,11 +20,19 @@ interface Aluno {
   curso: string;
   turma: string;
   periodo: string;
+  periodo_id: string;
   sala: string;
+}
+
+interface Periodo {
+  id: string;
+  nome: string;
+  ativo: boolean;
 }
 
 const AlunosTab = () => {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
+  const [periodos, setPeriodos] = useState<Periodo[]>([]);
   const [filteredAlunos, setFilteredAlunos] = useState<Aluno[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -40,33 +48,55 @@ const AlunosTab = () => {
     idade: '',
     curso: '',
     turma: '',
-    periodo: '',
+    periodo_id: '',
     sala: ''
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    loadAlunos();
+    loadData();
   }, []);
 
   useEffect(() => {
     filterAlunos();
   }, [alunos, searchTerm, filterTurma, filterCurso, filterPeriodo]);
 
-  const loadAlunos = async () => {
+  const loadData = async () => {
     try {
-      const { data, error } = await supabase
+      // Carregar alunos com período
+      const { data: alunosData, error: alunosError } = await supabase
         .from('alunos')
-        .select('*')
+        .select(`
+          *,
+          periodos!alunos_periodo_id_fkey (id, nome)
+        `)
         .order('nome');
 
-      if (error) throw error;
-      setAlunos(data || []);
+      if (alunosError) throw alunosError;
+      
+      // Transformar dados dos alunos
+      const alunosFormatted = alunosData?.map(aluno => ({
+        ...aluno,
+        periodo: aluno.periodos?.nome || aluno.periodo || 'N/A'
+      })) || [];
+
+      setAlunos(alunosFormatted);
+
+      // Carregar períodos ativos
+      const { data: periodosData, error: periodosError } = await supabase
+        .from('periodos')
+        .select('id, nome, ativo')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (periodosError) throw periodosError;
+      setPeriodos(periodosData || []);
+
     } catch (error) {
-      console.error('Erro ao carregar alunos:', error);
+      console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar lista de alunos",
+        description: "Erro ao carregar lista de dados",
         variant: "destructive"
       });
     } finally {
@@ -111,7 +141,7 @@ const AlunosTab = () => {
         idade: parseInt(formData.idade),
         curso: formData.curso,
         turma: formData.turma,
-        periodo: formData.periodo,
+        periodo_id: formData.periodo_id,
         sala: formData.sala
       };
 
@@ -133,7 +163,7 @@ const AlunosTab = () => {
       }
 
       resetForm();
-      loadAlunos();
+      loadData();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -153,7 +183,7 @@ const AlunosTab = () => {
       idade: aluno.idade?.toString() || '',
       curso: aluno.curso || '',
       turma: aluno.turma || '',
-      periodo: aluno.periodo || '',
+      periodo_id: aluno.periodo_id || '',
       sala: aluno.sala || ''
     });
     setEditingId(aluno.id);
@@ -171,7 +201,7 @@ const AlunosTab = () => {
 
       if (error) throw error;
       toast({ title: "Sucesso", description: "Aluno excluído com sucesso!" });
-      loadAlunos();
+      loadData();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -189,7 +219,7 @@ const AlunosTab = () => {
       idade: '',
       curso: '',
       turma: '',
-      periodo: '',
+      periodo_id: '',
       sala: ''
     });
     setEditingId(null);
@@ -198,6 +228,7 @@ const AlunosTab = () => {
 
   const uniqueTurmas = [...new Set(alunos.map(a => a.turma).filter(Boolean))];
   const uniqueCursos = [...new Set(alunos.map(a => a.curso).filter(Boolean))];
+  const uniquePeriodos = [...new Set(alunos.map(a => a.periodo).filter(Boolean))];
 
   if (isLoading) {
     return <div className="text-center py-4">Carregando alunos...</div>;
@@ -286,15 +317,18 @@ const AlunosTab = () => {
               <div>
                 <Label htmlFor="periodo">Período</Label>
                 <Select 
-                  value={formData.periodo} 
-                  onValueChange={(value) => setFormData({...formData, periodo: value})}
+                  value={formData.periodo_id} 
+                  onValueChange={(value) => setFormData({...formData, periodo_id: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o período" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Manhã">Manhã</SelectItem>
-                    <SelectItem value="Tarde">Tarde</SelectItem>
+                    {periodos.map(periodo => (
+                      <SelectItem key={periodo.id} value={periodo.id}>
+                        {periodo.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -352,8 +386,9 @@ const AlunosTab = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Todos os períodos</SelectItem>
-                <SelectItem value="Manhã">Manhã</SelectItem>
-                <SelectItem value="Tarde">Tarde</SelectItem>
+                {uniquePeriodos.map(periodo => (
+                  <SelectItem key={periodo} value={periodo}>{periodo}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -100,6 +100,7 @@ export type Database = {
           idade: number | null
           nome: string
           periodo: string | null
+          periodo_id: string | null
           senha: string | null
           turma: string | null
         }
@@ -110,6 +111,7 @@ export type Database = {
           idade?: number | null
           nome: string
           periodo?: string | null
+          periodo_id?: string | null
           senha?: string | null
           turma?: string | null
         }
@@ -120,10 +122,19 @@ export type Database = {
           idade?: number | null
           nome?: string
           periodo?: string | null
+          periodo_id?: string | null
           senha?: string | null
           turma?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "alunos_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       disciplina: {
         Row: {
@@ -407,6 +418,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      periodos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

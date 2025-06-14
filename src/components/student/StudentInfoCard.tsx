@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, GraduationCap, Clock, BookOpen, MapPin } from 'lucide-react';
+import { User, GraduationCap, Clock, BookOpen, MapPin, Calendar } from 'lucide-react';
 
 interface StudentData {
   id: string;
@@ -11,6 +11,10 @@ interface StudentData {
   turma: string;
   sala?: string;
   idade: number;
+  periodo?: string;
+  periodos?: {
+    nome: string;
+  };
 }
 
 interface StudentInfoCardProps {
@@ -28,6 +32,8 @@ const StudentInfoCard = ({ studentData }: StudentInfoCardProps) => {
     );
   }
 
+  const periodo = studentData.periodos?.nome || studentData.periodo;
+
   return (
     <Card>
       <CardHeader>
@@ -39,9 +45,15 @@ const StudentInfoCard = ({ studentData }: StudentInfoCardProps) => {
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <span className="mr-4">Turma: {studentData.turma}</span>
                 {studentData.sala && (
-                  <span className="flex items-center">
+                  <span className="flex items-center mr-4">
                     <MapPin className="h-4 w-4 mr-1" />
                     Sala: {studentData.sala}
+                  </span>
+                )}
+                {periodo && (
+                  <span className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {periodo}
                   </span>
                 )}
               </p>

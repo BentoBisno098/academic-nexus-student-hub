@@ -12,6 +12,10 @@ interface StudentData {
   turma: string;
   sala?: string;
   idade: number;
+  periodo?: string;
+  periodos?: {
+    nome: string;
+  };
 }
 
 interface Nota {
@@ -63,6 +67,25 @@ export const useStudentData = () => {
 
   const loadStudentData = async (sessionToken: string, student: StudentData) => {
     try {
+      // Carregar dados atualizados do aluno incluindo período
+      const { data: alunoData, error: alunoError } = await supabase
+        .from('alunos')
+        .select(`
+          *,
+          periodos!alunos_periodo_id_fkey (nome)
+        `)
+        .eq('id', student.id)
+        .single();
+
+      if (alunoError) throw alunoError;
+
+      const alunoAtualizado = {
+        ...alunoData,
+        periodos: alunoData.periodos
+      };
+
+      setStudentData(alunoAtualizado);
+
       // Carregar notas trimestrais
       const { data: notasData, error: notasError } = await supabase
         .from('notas')
@@ -93,7 +116,6 @@ export const useStudentData = () => {
       setNotas(notasFormatted);
 
       // Carregar horários da turma do aluno logado
-      // Filtrar horários onde a turma corresponde à turma do aluno
       const { data: horariosData, error: horariosError } = await supabase
         .from('horarios')
         .select(`

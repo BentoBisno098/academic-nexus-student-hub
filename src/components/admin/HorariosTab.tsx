@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -79,7 +78,11 @@ const HorariosTab = () => {
       // Transform the data to match our interface
       const formattedHorarios = horariosData?.map(horario => ({
         ...horario,
-        disciplinas: horario.disciplinas || null
+        disciplinas: horario.disciplinas && !Array.isArray(horario.disciplinas) 
+          ? horario.disciplinas 
+          : Array.isArray(horario.disciplinas) && horario.disciplinas.length > 0
+          ? horario.disciplinas[0]
+          : null
       })) || [];
 
       setHorarios(formattedHorarios);
