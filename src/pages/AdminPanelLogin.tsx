@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -207,12 +206,6 @@ const AdminPanelLogin = () => {
                 {isLoading ? 'Processando...' : 'Entrar'}
               </Button>
             </form>
-
-            <div className="mt-4 text-center">
-              <Button variant="link" className="text-sm">
-                Criar nova conta
-              </Button>
-            </div>
 
             <Alert className="mt-4">
               <AlertDescription>
