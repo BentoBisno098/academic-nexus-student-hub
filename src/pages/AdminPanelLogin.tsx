@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +14,6 @@ const AdminPanelLogin = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -86,60 +83,30 @@ const AdminPanelLogin = () => {
     setError(null);
 
     try {
-      if (isSignUp) {
-        console.log('AdminPanelLogin: Tentando criar conta...');
-        
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: name
-            }
-          }
-        });
+      console.log('AdminPanelLogin: Tentando fazer login...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-        if (error) {
-          // Tratar erros específicos
-          if (error.message?.includes('Failed to fetch')) {
-            throw new Error('Erro de conectividade. Verifique sua conexão com a internet.');
-          }
-          throw error;
+      if (error) {
+        // Tratar erros específicos
+        if (error.message?.includes('Failed to fetch')) {
+          throw new Error('Erro de conectividade. Verifique sua conexão com a internet.');
         }
-
-        toast({
-          title: "Cadastro realizado!",
-          description: "Conta criada com sucesso. Você pode fazer login agora."
-        });
-        setIsSignUp(false);
-        setName('');
-        setPassword('');
-      } else {
-        console.log('AdminPanelLogin: Tentando fazer login...');
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) {
-          // Tratar erros específicos
-          if (error.message?.includes('Failed to fetch')) {
-            throw new Error('Erro de conectividade. Verifique sua conexão com a internet.');
-          }
-          if (error.message?.includes('Invalid login credentials')) {
-            throw new Error('Email ou senha incorretos.');
-          }
-          throw error;
+        if (error.message?.includes('Invalid login credentials')) {
+          throw new Error('Email ou senha incorretos.');
         }
-
-        console.log('AdminPanelLogin: Login bem-sucedido, redirecionando...');
-        toast({
-          title: "Login realizado!",
-          description: "Bem-vindo ao painel administrativo."
-        });
-        navigate('/admin-panel');
+        throw error;
       }
+
+      console.log('AdminPanelLogin: Login bem-sucedido, redirecionando...');
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo ao painel administrativo."
+      });
+      navigate('/admin-panel');
     } catch (error: any) {
       console.error('AdminPanelLogin: Erro de autenticação:', error);
       const errorMessage = error.message || "Erro na autenticação";
@@ -185,7 +152,7 @@ const AdminPanelLogin = () => {
               Painel Administrativo
             </CardTitle>
             <p className="text-gray-600 mt-2">
-              {isSignUp ? 'Criar nova conta' : 'Acesse o painel de gestão'}
+              Acesse o painel de gestão
             </p>
           </CardHeader>
           <CardContent>
@@ -196,24 +163,6 @@ const AdminPanelLogin = () => {
             )}
 
             <form onSubmit={handleAuth} className="space-y-4">
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Digite seu nome"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -254,28 +203,13 @@ const AdminPanelLogin = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Processando...' : (isSignUp ? 'Criar Conta' : 'Entrar')}
+                {isLoading ? 'Processando...' : 'Entrar'}
               </Button>
             </form>
 
-            <div className="mt-6">
-              <Button 
-                variant="ghost" 
-                className="w-full"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                  setName('');
-                  setPassword('');
-                }}
-              >
-                {isSignUp ? 'Já tem conta? Fazer login' : 'Criar nova conta'}
-              </Button>
-            </div>
-
             <Alert className="mt-4">
               <AlertDescription>
-                <strong>Info:</strong> Após criar a conta, você terá acesso ao painel administrativo.
+                <strong>Info:</strong> Entre com suas credenciais de administrador.
               </AlertDescription>
             </Alert>
           </CardContent>
