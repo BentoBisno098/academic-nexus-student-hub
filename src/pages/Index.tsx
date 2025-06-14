@@ -9,13 +9,13 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4 relative">
-      {/* Logo PAC no canto superior direito */}
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
+      {/* Logo PAC no canto superior esquerdo como barra fixa */}
+      <div className="fixed top-0 left-0 z-50 bg-white shadow-md">
         <img 
           src="/lovable-uploads/d764889b-9997-433e-9334-393bf0086de7.png" 
           alt="Logo PAC" 
-          className="w-20 h-16 object-contain"
+          className="w-20 h-16 object-contain p-2"
         />
       </div>
 
