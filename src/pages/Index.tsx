@@ -9,7 +9,16 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4 relative">
+      {/* Logo PAC no canto superior direito */}
+      <div className="absolute top-4 right-4">
+        <img 
+          src="/lovable-uploads/d764889b-9997-433e-9334-393bf0086de7.png" 
+          alt="Logo PAC" 
+          className="w-20 h-16 object-contain"
+        />
+      </div>
+
       <div className="w-full max-w-4xl flex-1 flex flex-col justify-center">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema Acadêmico</h1>
