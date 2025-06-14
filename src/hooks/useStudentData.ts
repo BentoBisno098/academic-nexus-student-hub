@@ -90,7 +90,8 @@ export const useStudentData = () => {
 
       setNotas(notasFormatted);
 
-      // Carregar horários da turma
+      // Carregar horários da turma do aluno logado
+      // Lógica: buscar horários onde disciplina_id pertence a disciplinas da mesma turma do aluno
       const { data: horariosData, error: horariosError } = await supabase
         .from('horarios')
         .select(`
@@ -133,6 +134,7 @@ export const useStudentData = () => {
       setSchedule(horariosFormatted);
 
     } catch (error: any) {
+      console.error('Erro ao carregar dados do aluno:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do aluno",

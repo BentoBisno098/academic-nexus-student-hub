@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, BookOpen } from 'lucide-react';
 
 interface HorarioItem {
   id: string;
@@ -46,7 +46,7 @@ const MeusHorarios = ({ schedule, isLoading }: MeusHorariosProps) => {
         </CardHeader>
         <CardContent>
           <p className="text-center py-4 text-gray-500">
-            Ainda não há horários disponíveis para sua turma.
+            Você ainda não possui horários cadastrados para sua turma.
           </p>
         </CardContent>
       </Card>
@@ -75,6 +75,9 @@ const MeusHorarios = ({ schedule, isLoading }: MeusHorariosProps) => {
           <Clock className="h-5 w-5 mr-2" />
           Meus Horários
         </CardTitle>
+        <p className="text-sm text-gray-600 mt-1">
+          Horários das disciplinas da sua turma
+        </p>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -85,14 +88,17 @@ const MeusHorarios = ({ schedule, isLoading }: MeusHorariosProps) => {
                 {horarios.map((horario) => (
                   <div 
                     key={horario.id} 
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-colors"
+                    className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 mb-1">
-                          {horario.disciplina_nome}
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <div className="flex items-center mb-2">
+                          <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
+                          <h4 className="font-medium text-gray-900">
+                            {horario.disciplina_nome}
+                          </h4>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
                           Código: {horario.disciplina_codigo}
                         </p>
                         <div className="flex items-center text-sm text-gray-500 space-x-4">
