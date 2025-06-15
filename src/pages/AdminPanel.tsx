@@ -15,7 +15,7 @@ const AdminPanel = () => {
     return (
       <AdminErrorState 
         error={error} 
-        onReturnToLogin={() => navigate('/admin-panel-login')} 
+        onReturnToLogin={() => navigate('/login')} 
       />
     );
   }
@@ -35,7 +35,6 @@ const AdminPanel = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader 
-        userEmail={user?.email} 
         onLogout={handleLogout} 
       />
       <AdminDashboard />

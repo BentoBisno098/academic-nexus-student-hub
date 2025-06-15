@@ -27,7 +27,7 @@ export const useAdminAuth = () => {
         if (!session) {
           console.log('AdminPanel: Nenhuma sessão encontrada, redirecionando...');
           if (mounted) {
-            navigate('/admin-panel-login');
+            navigate('/login', { state: { defaultTab: 'admin' } });
           }
           return;
         }
@@ -49,7 +49,7 @@ export const useAdminAuth = () => {
             variant: "destructive"
           });
           setTimeout(() => {
-            navigate('/admin-panel-login');
+            navigate('/login', { state: { defaultTab: 'admin' } });
           }, 2000);
         }
       }
@@ -62,7 +62,7 @@ export const useAdminAuth = () => {
       if (!mounted) return;
 
       if (event === 'SIGNED_OUT') {
-        navigate('/admin-panel-login');
+        navigate('/login', { state: { defaultTab: 'admin' } });
       } else if (session) {
         setUser(session.user);
         setIsLoading(false);
@@ -86,7 +86,7 @@ export const useAdminAuth = () => {
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso"
       });
-      navigate('/admin-panel-login');
+      navigate('/login', { state: { defaultTab: 'admin' } });
     } catch (error: any) {
       console.error('AdminPanel: Erro no logout:', error);
       toast({

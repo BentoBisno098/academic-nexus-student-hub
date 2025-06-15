@@ -2,32 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
-const AdminHeader = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+interface AdminHeaderProps {
+  onLogout: () => void;
+}
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso"
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao fazer logout",
-        variant: "destructive"
-      });
-    }
-  };
-
+const AdminHeader = ({ onLogout }: AdminHeaderProps) => {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-6">
@@ -41,7 +21,7 @@ const AdminHeader = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleLogout}
+              onClick={onLogout}
               className="flex items-center space-x-2"
             >
               <LogOut className="h-4 w-4" />

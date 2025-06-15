@@ -21,7 +21,6 @@ import PasswordRecovery from "./pages/PasswordRecovery";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminPanel from "./pages/AdminPanel";
-import AdminPanelLogin from "./pages/AdminPanelLogin";
 import AdminAlunos from "./pages/AdminAlunos";
 import NotFound from "./pages/NotFound";
 
@@ -51,7 +50,6 @@ const App = () => (
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard-old" element={<AdminDashboard />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
-          <Route path="/admin-panel-login" element={<AdminPanelLogin />} />
           <Route path="/admin-alunos" element={<AdminAlunos />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
