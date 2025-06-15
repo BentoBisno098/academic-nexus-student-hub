@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,6 +34,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/auth-login" element={<AuthLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboardMain />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
@@ -47,7 +47,6 @@ const App = () => (
           <Route path="/help" element={<Help />} />
           <Route path="/new-user-guide" element={<NewUserGuide />} />
           <Route path="/password-recovery" element={<PasswordRecovery />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard-old" element={<AdminDashboard />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
           <Route path="/admin-alunos" element={<AdminAlunos />} />

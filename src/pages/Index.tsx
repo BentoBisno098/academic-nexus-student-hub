@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +50,7 @@ const Index = () => {
                 Gerencie alunos, disciplinas, notas e horários do sistema
               </p>
               <Button 
-                onClick={() => navigate('/login', { state: { defaultTab: 'admin' } })}
+                onClick={() => navigate('/admin-login')}
                 variant="outline"
                 className="w-full"
               >
